@@ -1,3 +1,10 @@
 Notes partie Jules :
 
 installer pour export PNG : npm install canvas
+
+Afficher profil simple : node cli.js profile data/
+Profil avec couleurs ANSI : node cli.js profile data/ --ansi
+Export CSV : node cli.js profile data/ --csv=profil.csv
+Export PNG : node cli.js profile data/ --png=profil.png
+
+Tout en même temps : node cli.js profile data/ --ansi --csv=profil.csv --png=profil.png
