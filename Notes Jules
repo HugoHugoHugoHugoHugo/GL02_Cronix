@@ -16,4 +16,4 @@ et, en remarque : "L’enseignant devrait être informé lorsque l’étudiant e
 Pour la post-condition, ce qui a été fait est qu'une fois que l'étudiant termine le test, 
 un rapport du test est créé (sous le format .json) et ce fichier est enregistré automatiquement dans
 le dossier "résultats" accessible uniquement par le professeur. On considère le professeur notifié 
-lorsqu'il verra appraître le rapport dans ce fichier.
+lorsqu'il verra apparaître le rapport dans ce fichier.
