@@ -1,139 +1,56 @@
-const fs = require('fs');
-const path = require('path');
-const readline = require('readline');
+// GenererFichierIdentification.js
+// SP3 : Génération d'une vCard enseignant via console
 
-const DOSSIER_VCARD = path.join(__dirname, '..', 'Vcard_files');
+import fs from "fs";
+import readline from "readline";
 
-/**
- * Poser une question à l’utilisateur.
- * @param {readline.Interface} interfaceLecture
- * @param {string} texte
- * @returns {Promise<string>}
- */
-const poserQuestion = (interfaceLecture, texte) => {
-  return new Promise((resolve) => {
-    interfaceLecture.question(texte, (reponse) => resolve(reponse.trim()));
-  });
-};
-
-/**
- * Vérifier si un email est valide.
- * @param {string} email
- * @returns {boolean}
- */
-const emailValide = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-/**
- * 3.1 RechercherEnseignant()
- * Dans le sujet, il n’y a pas de base officielle fournie.
- * Donc on récupère les infos via saisie utilisateur.
- * @param {readline.Interface} interfaceLecture
- * @returns {Promise<Array<Object>>} listeEnseignants
- */
-const RechercherEnseignant = async (interfaceLecture) => {
-  const nom = await poserQuestion(interfaceLecture, "Nom de l'enseignant : ");
-  const prenom = await poserQuestion(interfaceLecture, "Prénom de l'enseignant : ");
-
-  // On renvoie une liste pour rester conforme à la spec
-  return [{ idEnseignant: 1, nom, prenom }];
-};
-
-/**
- * 3.2 ChoisirEnseignant(idEnseignant) : Enseignant
- * Sélectionner l’enseignant dans la liste trouvée.
- * @param {Array<Object>} listeEnseignants
- * @param {number} idEnseignant
- * @returns {Object|undefined}
- */
-const ChoisirEnseignant = (listeEnseignants, idEnseignant) => {
-  return listeEnseignants.find(e => e.idEnseignant === idEnseignant);
-};
-
-/**
- * 3.3 GenererFichierIdentification(Enseignant) : fichier Vcard
- * Générer le fichier vCard dans Vcard_files/.
- * @param {Object} Enseignant
- * @returns {string} cheminFichier
- */
-const GenererFichierIdentification = (Enseignant) => {
-  if (!fs.existsSync(DOSSIER_VCARD)) {
-    fs.mkdirSync(DOSSIER_VCARD, { recursive: true });
-  }
-
-  const nomFichier = `${Enseignant.nom}_${Enseignant.prenom}.vcf`;
-  const cheminFichier = path.join(DOSSIER_VCARD, nomFichier);
-
-  const contenuVcard = [
-    "BEGIN:VCARD",
-    "VERSION:4.0",
-    `FN:${Enseignant.prenom} ${Enseignant.nom}`,
-    `N:${Enseignant.nom};${Enseignant.prenom};;;`,
-    `EMAIL:${Enseignant.email}`,
-    Enseignant.etablissements?.length ? `ORG:${Enseignant.etablissements.join(";")}` : null,
-    Enseignant.matieres?.length ? `TITLE:${Enseignant.matieres.join(", ")}` : null,
-    Enseignant.telephone ? `TEL;TYPE=cell:${Enseignant.telephone}` : null,
-    "END:VCARD"
-  ].filter(Boolean).join("\n");
-
-  fs.writeFileSync(cheminFichier, contenuVcard, 'utf-8');
-  return cheminFichier;
-};
-
-/**
- * Petit exécutable CLI pour tester SP3 seul (optionnel).
- */
-async function executerSP3() {
-  const interfaceLecture = readline.createInterface({
+function ask(question) {
+  const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout,
-    terminal: false,
+    output: process.stdout
   });
-
-  try {
-    console.log("\n=== SP3 : Génération vCard enseignant ===\n");
-
-    const listeEnseignants = await RechercherEnseignant(interfaceLecture);
-
-    console.log("\nEnseignant(s) trouvé(s) :");
-    listeEnseignants.forEach(e =>
-      console.log(`- [${e.idEnseignant}] ${e.prenom} ${e.nom}`)
-    );
-
-    let idTexte = await poserQuestion(interfaceLecture, "\nId de l'enseignant choisi : ");
-    let idEnseignant = parseInt(idTexte, 10) || 1;
-
-    let Enseignant = ChoisirEnseignant(listeEnseignants, idEnseignant);
-
-    let email = await poserQuestion(interfaceLecture, "Email : ");
-    while (!emailValide(email)) {
-      console.log("Email invalide.");
-      email = await poserQuestion(interfaceLecture, "Email : ");
-    }
-
-    const telephone = await poserQuestion(interfaceLecture, "Téléphone (optionnel) : ");
-    const matieresTexte = await poserQuestion(interfaceLecture, "Matières (séparées par virgules) : ");
-    const etabsTexte = await poserQuestion(interfaceLecture, "Établissements (séparés par virgules) : ");
-
-    Enseignant = {
-      ...Enseignant,
-      email,
-      telephone,
-      matieres: matieresTexte.split(',').map(s => s.trim()).filter(Boolean),
-      etablissements: etabsTexte.split(',').map(s => s.trim()).filter(Boolean),
-    };
-
-    const cheminCree = GenererFichierIdentification(Enseignant);
-    console.log(`\n✅ vCard générée : ${cheminCree}\n`);
-  } catch (erreur) {
-    console.error("Erreur SP3 :", erreur);
-  } finally {
-    interfaceLecture.close();
-  }
+  return new Promise(resolve => rl.question(question, ans => {
+    rl.close();
+    resolve(ans.trim());
+  }));
 }
 
-module.exports = {
-  RechercherEnseignant,
-  ChoisirEnseignant,
-  GenererFichierIdentification,
-  executerSP3
-};
+export async function executerSP3() {
+  console.log("\n=== SP3 : Génération vCard enseignant ===\n");
+
+  const nom = await ask("Nom de l'enseignant : ");
+  const prenom = await ask("Prénom de l'enseignant : ");
+
+  // Liste simple (si vous avez une base après, remplacer ici)
+  console.log("\nEnseignant(s) trouvé(s) :");
+  console.log(`- [1] ${prenom} ${nom}\n`);
+
+  const id = await ask("Id de l'enseignant choisi : ");
+  if (id !== "1") {
+    console.log("Id inconnu, arrêt.");
+    return;
+  }
+
+  const email = await ask("Email : ");
+  const tel = await ask("Téléphone (optionnel) : ");
+  const matieres = await ask("Matières (séparées par virgules) : ");
+  const etablissements = await ask("Établissements (séparés par virgules) : ");
+
+  const safeNom = nom.replace(/\s+/g, "_");
+  const safePrenom = prenom.replace(/\s+/g, "_");
+  const fileName = `vcard_${safePrenom}_${safeNom}.vcf`;
+
+  const vcard =
+`BEGIN:VCARD
+VERSION:3.0
+N:${nom};${prenom}
+FN:${prenom} ${nom}
+EMAIL:${email}
+TEL:${tel}
+NOTE:Matières: ${matieres} | Établissements: ${etablissements}
+END:VCARD
+`;
+
+  fs.writeFileSync(fileName, vcard, "utf-8");
+  console.log(`\nvCard générée → ${fileName}\n`);
+}
