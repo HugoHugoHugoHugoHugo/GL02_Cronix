@@ -1,63 +1,53 @@
-const fs = require('fs');
+// CreerHistogramme.js
+// SP6.2 : Calcul d'un profil simple à partir d'un fichier .gift
 
-// Outil : extraire le bloc de réponses { ... }
-const extractAnswerBlock = (question) => {
-  const match = question.match(/\{([\s\S]*?)\}/);
-  return match ? match[1].trim() : '';
-};
+import fs from "fs";
+import { parseGiftFile } from "./giftParser.js";
+import { classifyQuestion } from "./questionClassifier.js";
 
-// Outil : détecter le type de question (types utilisés dans le projet)
-const detectQuestionType = (question) => {
-  const answerBlock = extractAnswerBlock(question);
+// Normalisation des types vers les noms demandés
+function normalizeType(t) {
+  const type = (t || "").toUpperCase();
 
-  if (answerBlock.includes('~') && answerBlock.includes('=')) return 'QCM';
-  if (answerBlock.includes('->')) return 'Corresp';
-  if (/^\s*(TRUE|FALSE|T|F)\b/i.test(answerBlock.trim())) return 'V/F';
-  if (/^#|=\d+(:|..)/i.test(answerBlock)) return 'Num';
-  if (/\{\}/.test(question)) return 'Trous';
+  if (type.includes("QCM") || type.includes("MCQ")) return "QCM";
+  if (type.includes("QRO") || type.includes("OPEN")) return "QRO";
+  if (type.includes("VF") || type.includes("V/F") || type.includes("TRUEFALSE")) return "V/F";
+  if (type.includes("CORRESP") || type.includes("MATCH")) return "Corresp";
+  if (type.includes("NUM") || type.includes("NUMERICAL")) return "Num";
+  if (type.includes("TROU") || type.includes("FILL")) return "Trous";
 
-  return 'QRO';
-};
+  return null;
+}
 
-/**
- * 6.2 CreerHistogramme(Examen : Object) : fichierHistogramme : file
- * Ici, Examen peut être :
- *  - un chemin (string) vers un fichier .gift
- *  - un objet { filePath : string }
- * Sortie : un objet profil (et affichage possible dans un autre module)
- */
-const CreerHistogramme = (Examen) => {
-  let filePathExam = "";
-
-  if (typeof Examen === "string") filePathExam = Examen;
-  else if (Examen && Examen.filePath) filePathExam = Examen.filePath;
-
-  if (!filePathExam || !fs.existsSync(filePathExam)) {
-    console.log("Erreur : fichier d'examen introuvable.");
+export function CreerHistogramme(pathGift) {
+  if (!pathGift) return null;
+  if (!fs.existsSync(pathGift)) {
+    console.error(`Fichier introuvable : ${pathGift}`);
     return null;
   }
 
-  const content = fs.readFileSync(filePathExam, 'utf-8');
-  const questionsList = content
-    .split("\n\n")
-    .map(q => q.trim())
-    .filter(Boolean);
+  // Lecture brute
+  const content = fs.readFileSync(pathGift, "utf-8");
+
+  // Parse des questions (adapter le nom si besoin)
+  // giftParser.js doit fournir parseGiftFile(content) -> tableau de questions
+  const questions = parseGiftFile(content);
 
   const profil = {
-    'QCM': 0,
-    'QRO': 0,
-    'V/F': 0,
-    'Corresp': 0,
-    'Num': 0,
-    'Trous': 0,
+    QCM: 0,
+    QRO: 0,
+    "V/F": 0,
+    Corresp: 0,
+    Num: 0,
+    Trous: 0
   };
 
-  questionsList.forEach(q => {
-    const t = detectQuestionType(q);
-    if (profil[t] !== undefined) profil[t]++;
-  });
+  for (const q of questions) {
+    // questionClassifier.js doit fournir classifyQuestion(q) -> string type
+    const t = classifyQuestion(q);
+    const key = normalizeType(t);
+    if (key && profil[key] !== undefined) profil[key] += 1;
+  }
 
   return profil;
-};
-
-module.exports = { CreerHistogramme };
+}
