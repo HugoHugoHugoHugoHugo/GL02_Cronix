@@ -2,8 +2,8 @@
 // SP6.2 : Calcul d'un profil simple à partir d'un fichier .gift
 
 import fs from "fs";
-import { parseGiftFile } from "./giftParser.js";
-import { classifyQuestion } from "./questionClassifier.js";
+import { parseGiftFile } from "../core/giftParser.js";
+import { classifyQuestion } from "../core/questionClassifier.js";
 
 // Normalisation des types vers les noms demandés
 function normalizeType(t) {
