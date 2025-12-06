@@ -1,23 +1,17 @@
-// cli.js
-// =======================================================
-// Fonctions supportées :
-// 1. Histogramme (SP6.2 + SP8.3)
-// 2. Génération vCard enseignant (SP3)
-// 3. Profilage (profile)
-// 4. Comparaison de profils (compare)
-// 5. Simulation d'examen (SP7)
-// =======================================================
+// src/cli/cli.js
 
 import fs from "fs";
 import path from "path";
 import readline from "readline";
-import { createCanvas } from "canvas";
 
+// Config centralisée
+import { REVIEW_DIR, RESULTS_DIR, DATA_DIR } from "../config/config.js";
+
+// Fonctions du projet
+import { createCanvas } from "canvas";
 import { CreerHistogramme } from "../output/CreerHistogramme.js";
 import AfficherProfil from "../output/AfficherProfil.js";
 import * as sp3 from "../output/GenererFichierIdentification.js";
-
-
 import { profileFromFiles } from "../core/profiler.js";
 import { compareProfiles, printComparison } from "../core/comparator.js";
 import { simulateGiftTest } from "../core/simulateExam.js";
@@ -137,30 +131,50 @@ function exportPng(profile, file) {
 //                            MAIN CLI
 // =====================================================================
 
-async function main() {
-  const [, , command, ...args] = process.argv;
-
-  // MENU PRINCIPAL
-  if (!command) {
-    const choix = await ask(
-`Choisissez une action :
+async function runMenu() {
+  while (true) {
+    console.log(`
+===========================================
+           MENU PRINCIPAL - GL02
+===========================================
 1. Générer un histogramme (SP6.2 + SP8.3)
 2. Générer une vCard enseignant (SP3)
-3. Profilage (commande profile)
-4. Comparaison de profils (commande compare)
+3. Profilage
+4. Comparaison de profils
 5. Simuler un examen (SP7)
 0. Quitter
-Votre choix : `
-    );
+===========================================
+`);
 
-    if (choix === "1") {
-      const exam = await ask("Chemin du fichier .gift : ");
-      const profil = CreerHistogramme(exam);
-      console.log("\nProfil obtenu :\n", profil);
-      console.log("\nAffichage ASCII :");
-      AfficherProfil(profil);
+    // QUITTER
+    if (choix === "0") {
+      console.log("Au revoir !");
       process.exit(0);
     }
+
+    // ------------------------------------------------------------------
+    // 1. HISTOGRAMME
+    // ------------------------------------------------------------------
+
+    if (choix === "1") {
+      const file = await ask("Nom du fichier .gift (dans review/) : ");
+      const filePath = path.join(REVIEW_DIR, file);
+
+      const profil = CreerHistogramme(filePath);
+      if (!profil) {
+        console.log("Erreur : fichier introuvable.");
+      } else {
+        console.log("\n=== Histogramme des types de questions ===");
+        console.log(profil);
+        console.log("");
+        AfficherProfil(profil);
+      }
+      continue;
+    }
+
+    // ------------------------------------------------------------------
+    // 2. vCard enseignant
+    // ------------------------------------------------------------------
 
     if (choix === "2") {
       console.log("\nGénération vCard enseignant (SP3) ...");
@@ -173,134 +187,62 @@ Votre choix : `
       }
       process.exit(0);
     }
-
+    
+    // ------------------------------------------------------------------
+    // 3. PROFILAGE COMPLET
+    // ------------------------------------------------------------------
+    
     if (choix === "3") {
-      console.log("\nUtilisez : node cli.js profile <file|dir> [--ansi] [--csv file] [--png file]\n");
-      process.exit(0);
+      const p = await ask("Chemin du fichier : ");
+      const abs = resolvePath(p);
+
+      const profil = profileFromFiles([abs]);
+
+      console.log("\nProfil généré :");
+      console.log(profil);
+
+      console.log("\nHistogramme des types de questions :");
+      console.log(profil.percentages);
+
+      continue;
     }
 
+    // ------------------------------------------------------------------
+    // 4. COMPARAISON DE PROFILS
+    // ------------------------------------------------------------------
+    
     if (choix === "4") {
-      console.log("\nUtilisez : node cli.js compare <target.json> <baseline.json>\n");
-      process.exit(0);
+      const f1 = resolvePath(await ask("Profil cible (.json) : "));
+      const f2 = resolvePath(await ask("Profil référence (.json) : "));
+
+      const diff = compareProfiles(f1, f2);
+      printComparison(diff);
+      continue;
     }
 
+    // ------------------------------------------------------------------
+    // 5. SIMULATEUR D’EXAMEN
+    // ------------------------------------------------------------------
     if (choix === "5") {
-      const file = await ask("Chemin du fichier .gift à simuler : ");
-      const report = await simulateGiftTest(file);
+      const file = await ask("Nom du fichier .gift (dans review/) : ");
+      const filePath = path.join(REVIEW_DIR, file);
 
-      if (!fs.existsSync("results")) fs.mkdirSync("results");
+      const rapport = await simulateGiftTest(filePath);
 
-      const out = path.join("results", `result_${path.basename(file)}_${Date.now()}.json`);
-      fs.writeFileSync(out, JSON.stringify(report, null, 2));
+      // État sauvegardé dans /results
+      const outPath = path.join(
+        RESULTS_DIR,
+        `rapport_${Date.now()}.json`
+      );
+      fs.writeFileSync(outPath, JSON.stringify(rapport, null, 2), "utf8");
 
-      console.log(`\nSimulation terminée. Rapport enregistré → ${out}\n`);
-      process.exit(0);
+      console.log("Examen terminé. Rapport enregistré dans /results/");
+      continue;
     }
 
-    console.log("Au revoir.");
-    process.exit(0);
-  }
-
-
-  // ======================== COMMANDES DIRECTES =========================
-
-  if (command === "profile") {
-    const paths = args.filter(a => !a.startsWith("--"));
-    const flags = args.filter(a => a.startsWith("--"));
-
-    if (paths.length === 0) {
-      console.error("Usage: node cli.js profile <path> [--ansi] [--csv f] [--png f]");
-      process.exit(1);
+    console.log("Choix invalide.");
     }
-
-    const profile = profileFromFiles(paths);
-    const useAnsi = flags.includes("--ansi");
-
-    printAsciiHistogram(profile.percentages, useAnsi);
-
-    fs.writeFileSync("profil.json", JSON.stringify(profile, null, 2));
-    console.log("Profil généré → profil.json");
-
-    const csvFlag = flags.find(f => f.startsWith("--csv"));
-    if (csvFlag) exportCsv(profile, csvFlag.split("=")[1] || "profil.csv");
-
-    const pngFlag = flags.find(f => f.startsWith("--png"));
-    if (pngFlag) exportPng(profile, pngFlag.split("=")[1] || "profil.png");
-
-    return;
   }
 
-
-  if (command === "compare") {
-    if (args.length < 2) {
-      console.log("Usage: node cli.js compare <target.json> <baseline.json>");
-      process.exit(1);
-    }
-
-    const [target, baseline] = args;
-    const diff = compareProfiles(target, baseline);
-
-    fs.writeFileSync("comparison.json", JSON.stringify(diff, null, 2));
-    printComparison(diff);
-
-    return;
-  }
-
-
-  if (command === "simulate") {
-    if (!args[0]) {
-      console.log("Usage: node cli.js simulate <file.gift>");
-      process.exit(1);
-    }
-
-    const file = args[0];
-    const report = await simulateGiftTest(file);
-
-    if (!fs.existsSync("results")) fs.mkdirSync("results");
-    const out = path.join("results", `result_${path.basename(file)}_${Date.now()}.json`);
-
-    fs.writeFileSync(out, JSON.stringify(report, null, 2));
-    console.log(`\nSimulation terminée. Rapport enregistré → ${out}\n`);
-
-    return;
-  }
-
-
-  if (command === "histogram") {
-    if (!args[0]) {
-      console.log("Usage: node cli.js histogram <file.gift>");
-      process.exit(1);
-    }
-
-    const file = args[0];
-    const profil = CreerHistogramme(file);
-    console.log("\nProfil obtenu :\n", profil);
-    console.log("\nAffichage ASCII :");
-    AfficherProfil(profil);
-
-    return;
-  }
-
-
-  if (command === "vcard") {
-    console.log("\nGénération vCard enseignant (SP3) ...");
-    if (typeof sp3 === "function") {
-      await sp3();
-    } else if (sp3 && typeof sp3.executerSP3 === "function") {
-      await sp3.executerSP3();
-    } else {
-      console.log("SP3 non disponible.");
-    }
-    return;
-  }
-
-
-  console.log("Commandes disponibles :");
-  console.log("  node cli.js profile <paths>");
-  console.log("  node cli.js compare <target.json> <baseline.json>");
-  console.log("  node cli.js simulate <file.gift>");
-  console.log("  node cli.js histogram <gift>");
-  console.log("  node cli.js vcard");
-}
-
-main();
+// LANCEMENT
+runMenu();
