@@ -114,5 +114,5 @@ Ce dossier est accesible que par le professeur pour venir regarder les résultat
 **Structure du projet** :
 
 <p align="center">
-  <img src="assets/organisation" alt="Structure du projet" width="500">
+  <img src="assets/organisation.png" alt="Structure du projet" width="500">
 </p>
