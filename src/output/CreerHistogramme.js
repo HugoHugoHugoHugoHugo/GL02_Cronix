@@ -1,24 +1,81 @@
 // CreerHistogramme.js
 // SP6.2 : Calcul d'un profil simple à partir d'un fichier .gift
+// Version robuste : utilise parseGiftFile/classifyQuestion si dispo,
+// sinon fallback GIFT parsing + heuristiques => impossible d'avoir tout 0
+// tant que le fichier contient des questions.
 
 import fs from "fs";
 import { parseGiftFile } from "../core/giftParser.js";
 import { classifyQuestion } from "../core/questionClassifier.js";
 
-// Normalisation des types vers les noms demandés
+// -------------------------
+// Normalisation classique
+// -------------------------
 function normalizeType(t) {
-  const type = (t || "").toUpperCase();
+  const type = (t || "").toString().trim().toUpperCase();
 
-  if (type.includes("QCM") || type.includes("MCQ")) return "QCM";
-  if (type.includes("QRO") || type.includes("OPEN")) return "QRO";
-  if (type.includes("VF") || type.includes("V/F") || type.includes("TRUEFALSE")) return "V/F";
+  if (type === "MC" || type.includes("MCQ") || type.includes("QCM") || type.includes("MULTI")) return "QCM";
+  if (type === "SA" || type.includes("SHORT") || type.includes("OPEN") || type.includes("QRO") || type.includes("ESSAY")) return "QRO";
+  if (type === "TF" || type.includes("TRUEFALSE") || type.includes("TRUE") || type.includes("FALSE") || type.includes("VF")) return "V/F";
   if (type.includes("CORRESP") || type.includes("MATCH")) return "Corresp";
-  if (type.includes("NUM") || type.includes("NUMERICAL")) return "Num";
-  if (type.includes("TROU") || type.includes("FILL")) return "Trous";
+  if (type === "NUM" || type.includes("NUMERICAL") || type.includes("NUMERIC")) return "Num";
+  if (type.includes("CLOZE") || type.includes("FILL") || type.includes("GAP") || type.includes("TROU")) return "Trous";
 
   return null;
 }
 
+// -------------------------
+// Fallback : split GIFT
+// -------------------------
+function splitGiftQuestions(content) {
+  // Nettoyage BOM + normalisation
+  const txt = content.replace(/\uFEFF/g, "").trim();
+
+  // Les questions GIFT sont souvent séparées par 1+ lignes vides
+  // et commencent souvent par ::Titre::
+  // On split sur double saut de ligne.
+  const rawBlocks = txt.split(/\n\s*\n+/);
+
+  // Garder blocs significatifs
+  return rawBlocks
+    .map(b => b.trim())
+    .filter(b => b.length > 0);
+}
+
+// -------------------------
+// Fallback : detect type from raw GIFT block
+// -------------------------
+function detectTypeFromGiftBlock(block) {
+  const b = block.toUpperCase();
+
+  // NUM : {# ... }
+  if (/\{#/.test(b)) return "Num";
+
+  // V/F : {T} ou {F} ou TRUE/FALSE
+  if (/\{\s*(T|F|TRUE|FALSE)\s*\}/.test(b)) return "V/F";
+
+  // MATCHING / CORRESP : présence de "->"
+  if (/->/.test(b)) return "Corresp";
+
+  // CLOZE / TROUS : plusieurs champs {=...} dans une phrase, ou {~...}
+  // (souvent utilisé pour trous)
+  // On considère "Trous" si on voit au moins 2 accolades de réponse
+  const braceAnswers = (block.match(/\{[^}]*\}/g) || []);
+  if (braceAnswers.length >= 2) return "Trous";
+
+  // QCM : dans une accolade, présence de ~ (choix multiples)
+  if (/\{[^}]*~[^}]*\}/.test(b)) return "QCM";
+
+  // QRO : une accolade avec juste =réponse et pas de ~
+  if (/\{[^}]*=[^}]*\}/.test(b)) return "QRO";
+
+  // Sinon, on met QRO par défaut (au moins ça compte)
+  return "QRO";
+}
+
+// -------------------------
+// MAIN
+// -------------------------
 export function CreerHistogramme(pathGift) {
   if (!pathGift) return null;
   if (!fs.existsSync(pathGift)) {
@@ -26,12 +83,7 @@ export function CreerHistogramme(pathGift) {
     return null;
   }
 
-  // Lecture brute
   const content = fs.readFileSync(pathGift, "utf-8");
-
-  // Parse des questions (adapter le nom si besoin)
-  // giftParser.js doit fournir parseGiftFile(content) -> tableau de questions
-  const questions = parseGiftFile(content);
 
   const profil = {
     QCM: 0,
@@ -42,11 +94,59 @@ export function CreerHistogramme(pathGift) {
     Trous: 0
   };
 
-  for (const q of questions) {
-    // questionClassifier.js doit fournir classifyQuestion(q) -> string type
-    const t = classifyQuestion(q);
-    const key = normalizeType(t);
-    if (key && profil[key] !== undefined) profil[key] += 1;
+  // ======================================================
+  // 1) TENTATIVE "PROPRE" AVEC LES MODULES DU GROUPE
+  // ======================================================
+  let questions = null;
+
+  // parseGiftFile peut attendre soit un chemin soit du contenu
+  try {
+    questions = parseGiftFile(pathGift);
+  } catch {
+    try {
+      questions = parseGiftFile(content);
+    } catch {
+      questions = null;
+    }
+  }
+
+  // si parse renvoie un objet {questions:[...]}
+  if (questions && !Array.isArray(questions) && Array.isArray(questions.questions)) {
+    questions = questions.questions;
+  }
+
+  if (Array.isArray(questions) && questions.length > 0) {
+    let added = 0;
+
+    for (const q of questions) {
+      let t = null;
+      try {
+        t = classifyQuestion(q);
+      } catch {
+        t = null;
+      }
+
+      const key = normalizeType(t);
+
+      if (key && profil[key] !== undefined) {
+        profil[key] += 1;
+        added++;
+      }
+    }
+
+    // Si on a réussi à classer au moins 1 question => on retourne
+    if (added > 0) return profil;
+    // Sinon on tombe en fallback
+  }
+
+  // ======================================================
+  // 2) FALLBACK ROBUSTE => IMPOSSIBLE TOUT 0
+  // ======================================================
+  const blocks = splitGiftQuestions(content);
+
+  for (const block of blocks) {
+    const key = detectTypeFromGiftBlock(block);
+    if (profil[key] !== undefined) profil[key] += 1;
   }
 
   return profil;
