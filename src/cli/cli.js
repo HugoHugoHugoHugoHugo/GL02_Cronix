@@ -145,6 +145,7 @@ async function runMenu() {
 0. Quitter
 ===========================================
 `);
+    const choix = await ask("Votre choix : ");
 
     // QUITTER
     if (choix === "0") {
