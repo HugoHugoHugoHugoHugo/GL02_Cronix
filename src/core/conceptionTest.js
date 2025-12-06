@@ -3,6 +3,7 @@ import {Test} from "./Test.js";
 import {searchQuestion} from "./searchQuestion.js";
 import {displayQuestion} from "./displayQuestion.js"
 import readline from "readline";
+import fs from "fs";
 
 //Les fonctions async ne doivent pas etre utilisees telles qu'elles, elles contiennent des blocs d'instruction a executer dans le main
 export async function createTest(idUser,nameTest){
@@ -153,8 +154,19 @@ export function verifierDifferenceQuestions(testCreated){
 }
 
 export function ecrireTestFichier(testCreated){
-    //Ecrire  ::nom du test::\n
+
+    
+    let fileContent=['\n'];
     //Pour chaque question, ecrire ce qu'il y a dans question.raw
+    for(let i=0;i<testCreated.questions.length;i++){
+        fileContent+=testCreated.questions[i].raw;
+    }
+    const fileName=`${testCreated.name}.gift`;
+    
+    
+    fs.writeFileSync(fileName,fileContent , "utf-8");
+    
+    
 }
 export function ask(question) {
   const rl = readline.createInterface({
