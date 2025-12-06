@@ -1,0 +1,90 @@
+{
+  "studentId": null,
+  "file": "U6-p60-Listening.gift",
+  "timestamp": "2025-12-06T08:42:31.705Z",
+  "totalGaps": 8,
+  "correctCount": 8,
+  "percent": 100,
+  "answers": [
+    {
+      "gapId": 1,
+      "parentTitle": "U6 p60 Listening 1.1",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "the lighting",
+      "expected": [
+        "the lighting"
+      ]
+    },
+    {
+      "gapId": 2,
+      "parentTitle": "U6 p60 Listening 3.2",
+      "type": "MCQ",
+      "chosenIndex": 1,
+      "chosenText": "worried about when they’re going to eat",
+      "expected": [
+        "worried about when they’re going to eat"
+      ]
+    },
+    {
+      "gapId": 3,
+      "parentTitle": "U6 p60 Listening 3.3",
+      "type": "MCQ",
+      "chosenIndex": 2,
+      "chosenText": "a news show",
+      "expected": [
+        "a news show"
+      ]
+    },
+    {
+      "gapId": 4,
+      "parentTitle": "U6 p60 Listening 3.4",
+      "type": "MCQ",
+      "chosenIndex": 2,
+      "chosenText": "It will be on different dates.",
+      "expected": [
+        "It will be on different dates."
+      ]
+    },
+    {
+      "gapId": 5,
+      "parentTitle": "U6 p60 Listening 3.5",
+      "type": "MCQ",
+      "chosenIndex": 2,
+      "chosenText": "She wants to make her family the priority.",
+      "expected": [
+        "She wants to make her family the priority."
+      ]
+    },
+    {
+      "gapId": 6,
+      "parentTitle": "U6 p60 Listening 3.6",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "the variety of genres",
+      "expected": [
+        "the variety of genres"
+      ]
+    },
+    {
+      "gapId": 7,
+      "parentTitle": "U6 p60 Listening 3.7",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "giving her opinion about the topic of the play",
+      "expected": [
+        "giving her opinion about the topic of the play"
+      ]
+    },
+    {
+      "gapId": 8,
+      "parentTitle": "U6 p60 Listening 3.8",
+      "type": "MCQ",
+      "chosenIndex": 2,
+      "chosenText": "her friend",
+      "expected": [
+        "her friend"
+      ]
+    }
+  ]
+}

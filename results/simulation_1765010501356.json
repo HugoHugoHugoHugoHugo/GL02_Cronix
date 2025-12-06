@@ -1,0 +1,70 @@
+{
+  "studentId": null,
+  "file": "U7-p79-Review-3.gift",
+  "timestamp": "2025-12-06T08:41:41.354Z",
+  "totalGaps": 6,
+  "correctCount": 1,
+  "percent": 16.7,
+  "answers": [
+    {
+      "gapId": 1,
+      "parentTitle": "U7 p79 Review 3.1",
+      "type": "MCQ",
+      "chosenIndex": 2,
+      "chosenText": "too",
+      "expected": [
+        "too"
+      ]
+    },
+    {
+      "gapId": 2,
+      "parentTitle": "U7 p79 Review 3.2",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "round",
+      "expected": [
+        "return"
+      ]
+    },
+    {
+      "gapId": 3,
+      "parentTitle": "U7 p79 Review 3.3",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "reason",
+      "expected": [
+        "point"
+      ]
+    },
+    {
+      "gapId": 4,
+      "parentTitle": "U7 p79 Review 3.4",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "so",
+      "expected": [
+        "such"
+      ]
+    },
+    {
+      "gapId": 5,
+      "parentTitle": "U7 p79 Review 3.5",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "alone",
+      "expected": [
+        "remote"
+      ]
+    },
+    {
+      "gapId": 6,
+      "parentTitle": "U7 p79 Review 3.6",
+      "type": "MCQ",
+      "chosenIndex": 0,
+      "chosenText": "on",
+      "expected": [
+        "up"
+      ]
+    }
+  ]
+}
