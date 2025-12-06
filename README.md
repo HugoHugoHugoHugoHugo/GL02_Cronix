@@ -19,6 +19,8 @@ CHARLET-SOMLETTE Jules.
 
 <code>npm install</code>
 
+Au besoin : <code>npm install canvas</code>
+
 **Dépendances:**
 
 
