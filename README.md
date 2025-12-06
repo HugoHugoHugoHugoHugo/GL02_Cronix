@@ -57,9 +57,17 @@ Le programme :
 
 Exemple de sortie :
 
-<code>
-Test terminé.
+<code>Test terminé.
 (Rapport enseignant → /Users/jules/Downloads/GL02_Cronix/results/simulation_1765010551708.json)</code>
+
+Ecarts :
+Il nous est demandé en post-condition : "Les résultats sont fournis à la fin de la simulation, à l’enseignant" 
+et, en remarque : "L’enseignant devrait être informé lorsque l’étudiant effectue la simulation".
+
+Pour la post-condition, ce qui a été fait est qu'une fois que l'étudiant termine le test, 
+un rapport du test est créé (sous le format .json) et ce fichier est enregistré automatiquement dans
+le dossier "résultats" accessible uniquement par le professeur. On considère le professeur notifié 
+lorsqu'il verra apparaître le rapport dans ce fichier.
 
 2. **Profilage** (SPEC 7)
 
