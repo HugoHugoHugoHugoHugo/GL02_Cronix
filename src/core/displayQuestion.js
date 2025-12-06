@@ -4,12 +4,14 @@ import { searchQuestion } from './searchQuestion.js';
 //Affiche le contenu d'une question mise en forme
 //Pour prendre en compte le html, il faut un nouveau parseur
 export function displayQuestion(question){
-    //pour commencer, detecter le type de question
-    const typeQuestion=classifyQuestion(question);//type de question
-    const symbolToDelele=["[html]","<i>","</i>","<br>","<b>","</b>"];
-    for(const symbol of symbolToDelele){
-        if(question.text.includes(symbol)){
-        question.text=question.text.replace(symbol,"");
+    
+    if(question.text===null){
+        console.log("question vide ! ");
+    }else{
+        const symbolToDelele=["[html]","<i>","</i>","<br>","<b>","</b>"];
+    for(let i=0;i<symbolToDelele.length;i++){
+        if(question.text.includes(symbolToDelele[i])){
+        question.text=question.text.replace(symbolToDelele[i],"");
     }
     }
     
@@ -37,9 +39,10 @@ export function displayQuestion(question){
                     if(indexChar>4){
                         if(answers[i][indexChar]!=="=" ){
                             if(answers[i][indexChar]==="~"){
-                                lineDisplayed+="possible answer :"
+                                lineDisplayed+="\npossible answer :"
                             }else{
                                 lineDisplayed+=answers[i][indexChar];
+                                
                             }
                         }
                     }
@@ -47,9 +50,10 @@ export function displayQuestion(question){
                     if(indexChar>4){
                         if(answers[i][indexChar]!=="=" ){
                             if(answers[i][indexChar]==="~"){
-                                lineDisplayed+="possible answer :"
+                                lineDisplayed+="\npossible answer :"
                             }else{
                                 lineDisplayed+=answers[i][indexChar];
+                                
                             }
                         }
                     }
@@ -63,10 +67,15 @@ export function displayQuestion(question){
                 else{
                     lineDisplayed+=answers[i][indexChar];
                 }
-            }}
+            }
+
+        }
+        lineDisplayed+="\n";
         console.log(lineDisplayed);
         
     }
+    }
+    
 }
         
         

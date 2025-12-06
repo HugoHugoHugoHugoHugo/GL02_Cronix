@@ -46,19 +46,22 @@ export async function createTest(idUser,nameTest){
     }
     
 }
-function AfficherQuestions(content,beginning){
+export function AfficherQuestions(content,beginning){
     let input='data/SujetB_data/';// variable a determiner en fonction de la structure de l'application
     let questions=searchQuestion(content,beginning, input);
     //Affichage des titres et des indices des questions-----------------------
+    let indexForquestions=0;
     for(let i=0;i<questions.length;i++){
         for(let j=0;j<questions[i].length;j++){
-        console.log("("+i*j+") : "+questions[i][j].title);
+        
+        console.log("("+indexForquestions+") : "+questions[i][j].title);
+        indexForquestions++;
     }    
     }
     //------------------------------------------------------------------------
     return questions;
 }
-function addQuestion(testCreated,index,questions){
+export function addQuestion(testCreated,index,questions){
     
     
     
@@ -71,10 +74,15 @@ function addQuestion(testCreated,index,questions){
     testCreated.addQuestion(question);
     
 }
-function chooseQuestion(questions,index){
+export function chooseQuestion(questions,index){
     // Par la suite, au moment de faire des interfaces, on pourra envisager un fonctionnement plus complexe
-    
-    return questions[index];
+    let q=[];
+    for(let i=0;i<questions.length;i++){
+        for(let j=0;j<questions[i].length;j++){
+            q.push(questions[i][j]);
+    }    
+    }
+    return q[index];
 }
 
 
@@ -108,7 +116,7 @@ async function acceptQuestion() {
 
     
 }
-function valider(testCreated,numberMaxQuestions){
+export function valider(testCreated,numberMaxQuestions){
     //On verifie que le nombre de questions ne depasse pas le maximum autorise
     if(verifierNombreQuestions(testCreated,numberMaxQuestions)===false){
         console.log("Le nombre de questions doit etre inferieur a 20");
@@ -126,12 +134,12 @@ function valider(testCreated,numberMaxQuestions){
     
     }
 
-function verifierNombreQuestions(testCreated,numberMaxQuestions){
+export function verifierNombreQuestions(testCreated,numberMaxQuestions){
     if(testCreated.questions.length>numberMaxQuestions){
         return false;
     }
 }
-function verifierDifferenceQuestions(testCreated){
+export function verifierDifferenceQuestions(testCreated){
     for(let i=0;i<testCreated.questions.length;i++){
             let questionATester=testCreated.questions[i];
             for(let indexQuestions=0;indexQuestions<testCreated.questions.length;indexQuestions++){
@@ -144,11 +152,11 @@ function verifierDifferenceQuestions(testCreated){
         }
 }
 
-function ecrireTestFichier(testCreated){
+export function ecrireTestFichier(testCreated){
     //Ecrire  ::nom du test::\n
     //Pour chaque question, ecrire ce qu'il y a dans question.raw
 }
-function ask(question) {
+export function ask(question) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
