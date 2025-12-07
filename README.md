@@ -94,9 +94,10 @@ Sortie :
 
 Multiple choice :
 
-<code> ::Q1:: Who invented the telephone?
+
+```bash ::Q1:: Who invented the telephone?
 {~Edison ~Tesla =Bell}
-</code>
+```
 
 Open cloze :
 
