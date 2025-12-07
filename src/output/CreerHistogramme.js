@@ -101,7 +101,8 @@ export function CreerHistogramme(pathGift) {
 
   // parseGiftFile peut attendre soit un chemin soit du contenu
   try {
-    questions = parseGiftFile(pathGift);
+    const content = fs.readFileSync(pathGift, "utf-8");
+    questions = parseGiftFile(content); 
   } catch {
     try {
       questions = parseGiftFile(content);
