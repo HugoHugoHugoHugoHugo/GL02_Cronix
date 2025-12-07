@@ -76,14 +76,20 @@ export function addQuestion(testCreated,index,questions){
     
 }
 export function chooseQuestion(questions,index){
-    // Par la suite, au moment de faire des interfaces, on pourra envisager un fonctionnement plus complexe
+    
     let q=[];
     for(let i=0;i<questions.length;i++){
         for(let j=0;j<questions[i].length;j++){
             q.push(questions[i][j]);
     }    
     }
-    return q[index];
+    if(index<q.length && index >= 0){
+        return q[index];
+    }
+    else{
+        return false;
+    }
+    
 }
 
 
