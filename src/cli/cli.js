@@ -186,7 +186,7 @@ async function runMenu() {
       } else {
         console.log("SP3 non disponible.");
       }
-      process.exit(0);
+      continue;
     }
     
     // ------------------------------------------------------------------
