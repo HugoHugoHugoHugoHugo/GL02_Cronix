@@ -1,5 +1,5 @@
 
-import { parseGiftFile } from "./giftParser.js";
+import { parseGiftFile } from "./giftParserForConceptionTest.js";
 import fs from "fs";
 import path from "path";
 export function searchQuestion(content, beginning,input){
