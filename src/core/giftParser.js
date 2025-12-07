@@ -1,4 +1,4 @@
-// giftParser.js — Version robuste “context-aware”
+// giftParser.js
 
 import fs from "fs";
 
@@ -28,24 +28,24 @@ export function parseGiftFile(path) {
     const title = titleMatch[1].trim();
     const body = block.slice(titleMatch[0].length).trim();
 
-    // Check if this is an INSTRUCTION
+    // Check if this is an INSTRUCTION (no { } block)
     if (!body.includes("{")) {
       questions.push({
         type: "INSTRUCTION",
         title,
         text: body,
-        blocks: []
+        answers: []
       });
 
       // detect context from instruction text
       const low = body.toLowerCase();
-      if (low.includes("choose the correct") || low.includes("best answer"))
+      if (low.includes("choose the correct") || low.includes("best answer") || low.includes("multiple choice"))
         currentContext = "MCQ";
       else if (low.includes("complete the sentences") && low.includes("one word"))
         currentContext = "OPEN";
-      else if (low.includes("complete the sentences"))
+      else if (low.includes("complete the sentences") || low.includes("think of the word"))
         currentContext = "OPEN";
-      else if (low.includes("key word"))
+      else if (low.includes("key word") || low.includes("word formation"))
         currentContext = "KWT";
       else
         currentContext = null;
@@ -53,64 +53,76 @@ export function parseGiftFile(path) {
       continue;
     }
 
-    // Extract { ... }
-    const rawBlocks = [...body.matchAll(/\{([\s\S]*?)\}/g)].map(m => m[1].trim());
+    // Extract { ... } blocks - INCLUDING {1:MC:...} and {1:SA:...} formats
+    const rawBlocks = [...body.matchAll(/\{([^}]*)\}/g)].map(m => m[1].trim());
 
-    // Detect question type
+    if (rawBlocks.length === 0) continue;
+
+    // Detect question type from the blocks
     let type = null;
+    const answers = [];
 
-    if (rawBlocks.some(b => b.includes("~"))) {
-      type = "MCQ";
-    } else {
-      // no "~"
-      // if multiple "=" → KWT
-      if (rawBlocks.some(b => (b.match(/=/g) || []).length > 1)) {
-        type = "KWT";
-      } else {
-        type = "OPEN";
+    for (const rawBlock of rawBlocks) {
+      // Check for {1:MC:...} format (Multiple Choice)
+      if (rawBlock.startsWith("1:MC:")) {
+        type = "multiple";
+        const content = rawBlock.substring(5); // Remove "1:MC:"
+        // Extract choices: ~=correct ~wrong ~wrong
+        const choices = content.split("~").filter(c => c.trim());
+        answers.push(...choices.map(c => c.replace(/^=/, "").trim()));
+      }
+      // Check for {1:SA:...} format (Short Answer)
+      else if (rawBlock.startsWith("1:SA:")) {
+        type = "courte";
+        const content = rawBlock.substring(5); // Remove "1:SA:"
+        // Extract answers: =answer1~=answer2
+        const answerList = content.split("~").filter(c => c.trim());
+        answers.push(...answerList.map(a => a.replace(/^=/, "").trim()));
+      }
+      // Standard GIFT formats
+      else if (rawBlock.includes("~")) {
+        type = "multiple";
+        const choices = [...rawBlock.matchAll(/(~|=)([^~=}]+)/g)].map(m => m[2].trim());
+        answers.push(...choices);
+      }
+      // True/False
+      else if (rawBlock.toLowerCase() === "true" || rawBlock.toLowerCase() === "false" ||
+               rawBlock === "T" || rawBlock === "F") {
+        type = "vrai_faux";
+        answers.push(rawBlock);
+      }
+      // Numeric
+      else if (/^\d+([.,]\d+)?(\.\.\d+([.,]\d+)?)?$/.test(rawBlock)) {
+        type = "numerique";
+        answers.push(rawBlock);
+      }
+      // Single answer with =
+      else if (rawBlock.includes("=")) {
+        const parts = rawBlock.split(/=|\|/).map(x => x.trim()).filter(Boolean);
+        if (parts.length > 1) {
+          type = "mot_manquant";
+        } else {
+          type = "courte";
+        }
+        answers.push(...parts);
+      }
+      // Default: courte
+      else {
+        if (!type) type = "courte";
+        answers.push(rawBlock);
       }
     }
 
-    // if instruction context defined → override
-    if (currentContext) type = currentContext;
-
-    // Parse the blocks
-    const parsedBlocks = rawBlocks.map(b => {
-      if (type === "MCQ") {
-        const choices = [...b.matchAll(/(~|=)([^~=}]+)/g)].map(m => ({
-          correct: m[1] === "=",
-          text: m[2].trim()
-        }));
-        return { type: "MCQ", choices };
-      }
-
-      if (type === "KWT") {
-        const answers = b
-          .split("=")
-          .map(x => x.trim())
-          .filter(Boolean);
-        return { type: "KWT", answers };
-      }
-
-      // OPEN
-      const answers = b
-        .replace(/#.*$/, "") // remove metadata
-        .split(/=|\|/)
-        .map(a => a.trim())
-        .filter(Boolean);
-
-      return { type: "OPEN", answers };
-    });
-
-    // Question text without the {…}
-    const textWithPlaceholders = body.replace(/\{[\s\S]*?\}/g, "ANSWER");
+    // Override with context if available
+    if (currentContext === "MCQ") type = "multiple";
+    else if (currentContext === "OPEN") type = "courte";
+    else if (currentContext === "KWT") type = "mot_manquant";
 
     questions.push({
       title,
-      type,
+      type: type || "inconnu",
       text: body,
-      textWithPlaceholders,
-      blocks: parsedBlocks
+      answers: answers.filter(a => a && a.length > 0)
     });
   }
 
