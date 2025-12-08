@@ -64,37 +64,111 @@ L'outil prend en entrée des fichiers GIFT contenant des questions du type :
 
 **Fonctionnalités principales :**
 
-1. **Simulation d'examen** (SPEC 4) :
+1. **Conception / génération d’examen** (SPEC 1)
+
+Le programme permet à un enseignant de construire un examen à partir d’une banque de questions certifiée :
+
+- sélection de questions depuis une ou plusieurs banques GIFT,
+- ajout / suppression de questions dans l’examen,
+- génération d’un fichier d’examen final au format `.gift`,
+- sauvegarde de l’examen dans le dossier `review/` (via config).
+
+Sortie :
+- un fichier examen `.gift` prêt à être simulé / analysé.
+
+---
+
+2. **Recherche et visualisation de questions** (SPEC 2)
+
+Le programme permet de retrouver rapidement une question dans une banque :
+
+- recherche par mots-clés (titre ou contenu),
+- filtrage par type de question,
+- support des expressions régulières (regex),
+- affichage clair dans la console (titre, consigne, réponses possibles).
+
+Sortie :
+- liste de questions affichée dans la console,
+- possibilité d’ajouter une question trouvée à un examen (lien avec SPEC 1).
+
+---
+
+3. **Génération d’un fichier d’identification enseignant** (SPEC 3)
+
+Le programme assure l’identification des enseignants au format vCard :
+
+- recherche / sélection d’un enseignant (saisie guidée),
+- collecte des informations (nom, prénom, email, téléphone, matières…),
+- validation simple du format email à la saisie,
+- génération automatique d’une vCard.
+
+Sortie :
+- un fichier `.vcf` enregistré dans `results/vcards/`.
+
+---
+
+4. **Simulation d'examen** (SPEC 4)
 
 Le programme :
- - lit les fichiers gift d'examens (créé préalablement par un professeur ou dans le jeu de données fourni),
- - pose toutes les questions à l'étudiant (selon les types de questions défini plus haut)
- - accepte plusieurs réponses pour une même question (si plusieurs réponses possibles sont proposées dans le fichier gift),
- - n'affiche jamais la correction pour l'étudiant,
- - génère automatiquement à la fin de l'examen un rapport JSON dans ./results/
+- lit les fichiers GIFT d'examens (créés par un professeur ou fournis),
+- pose toutes les questions à l’étudiant (selon les types supportés),
+- accepte plusieurs réponses pour une même question si prévues dans le GIFT,
+- n’affiche jamais la correction à l’étudiant,
+- génère automatiquement à la fin de l’examen un rapport JSON dans `./results/`.
 
 Exemple de sortie :
 
 <code>Test terminé.
-(Rapport enseignant → /Users/jules/Downloads/GL02_Cronix/results/simulation_1765010551708.json)</code>
+(Rapport enseignant → ./results/simulation_<timestamp>.json)</code>
 
-2. **Profilage** (SPEC 7)
+---
 
-Le programme crée le profil des types de questions.
+5. **Validation de la qualité d’un examen** (SPEC 5)
+
+Le programme vérifie qu’un fichier d’examen respecte les contraintes :
+
+- unicité des questions (pas de doublons),
+- respect des limites de taille / nombre,
+- cohérence de la structure GIFT,
+- messages d’erreur / avertissements clairs en console.
 
 Sortie :
- - profil.json
- - un historigramme ASCII
- - exports optionnels en PNG et/ou CSV 
+- examen validé ou rejeté avec explications en console.
 
-3. **Comparaison de profils** (SPEC 8)
+---
 
-Le programme affiche les différences de pourcentage par type de questions.
+6. **Histogramme des types de questions** (SPEC 6)
 
-Sortie : 
- - comparison.json
+Le programme calcule et affiche la répartition des types de questions d’un examen ou d’une banque :
 
-----------------
+- détection automatique du type de chaque question,
+- comptage par catégorie (QCM, QRO, V/F, Corresp, Num, Trous),
+- production d’un profil simple.
+
+Sortie :
+- histogramme ASCII et profil simple affichés en console.
+
+---
+
+7. **Profilage** (SPEC 7)
+
+Le programme crée le profil détaillé des types de questions.
+
+Sortie :
+- `profil.json`
+- un histogramme ASCII
+- exports optionnels en PNG et/ou CSV
+
+---
+
+8. **Comparaison de profils** (SPEC 8)
+
+Le programme compare deux profils et affiche les écarts par type de questions.
+
+Sortie :
+- `comparison.json`
+- affichage console des différences de pourcentage.
+
 
 **Structure d'un fichier GIFT supporté** :
 
