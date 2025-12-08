@@ -270,7 +270,11 @@ Ce dossier est accessible que par les professeurs pour venir regarder les résul
 **Structure du projet** :
 
 <p align="center">
-  <img src="assets/organisation.png" alt="Structure du projet" width="500">
+  <img src="assets/organisation1.png" alt="Structure du projet" width="500">
+</p>
+
+<p align="center">
+  <img src="assets/organisation2.png" alt="Structure du projet" width="500">
 </p>
 
 project/
