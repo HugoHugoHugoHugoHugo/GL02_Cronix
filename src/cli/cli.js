@@ -18,11 +18,17 @@ import {
 // Fonctions du projet
 import { createCanvas } from "canvas";
 import { CreerHistogramme } from "../output/CreerHistogramme.js";
-import AfficherProfil from "../output/AfficherProfil.js";
 import * as sp3 from "../output/GenererFichierIdentification.js";
 import { profileFromFiles } from "../core/profiler.js";
 import { compareProfiles, printComparison } from "../core/comparator.js";
 import { simulateGiftTest } from "../core/simulateExam.js";
+import {Test} from "../core/Test.js";
+import AfficherProfil from "../output/AfficherProfil.js";
+import {displayQuestion} from "../core/displayQuestion.js"
+import {AfficherQuestions} from "../core/conceptionTest.js"
+import {addQuestion} from "../core/conceptionTest.js"
+import {chooseQuestion} from "../core/conceptionTest.js"
+import {valider} from "../core/conceptionTest.js"
 
 // ========================= INITIALISATION =========================
 
@@ -240,6 +246,7 @@ async function runMenu() {
 3. Profilage d'une banque de questions
 4. Comparaison de profils
 5. Simuler un examen
+6. Créer un test
 0. Quitter
 ===========================================
 `);
@@ -692,8 +699,123 @@ async function runMenu() {
     await ask("\nAppuyez sur Entrée pour revenir au menu...");
     continue;
   }
-}
-}
+   // ------------------------------------------------------------------
+    // 6. CREATEUR D’EXAMEN
+    // ------------------------------------------------------------------
+  if (choix === "6") {
+      //Initialisation
+      let idUser = 1;
+      let nameTest = await ask('Saisissez le nom du nouveau test :');
+      let testCreated = new Test([], idUser, nameTest);
+      //Ajouter des questions
+      let continuate = true;
+      while (continuate) {
+
+        let beginning = "";//a determiner par l'utilisateur
+        let content = "";//a determiner par l'utilisateur
+
+        let result = await ask('Rechercher une question en saisissant le titre ?  :\n oui (1) \n non (2)\n');
+        if (result === "1") {
+
+
+          beginning = await ask('Saisissez le titre : ');
+        }
+
+        result = await ask('Rechercher une question en saisissant une partie du contenu ?  :\n oui (1) \n non (2)\n');
+        if (result === "1") {
+
+
+          content = await ask('Saisissez le contenu : ');
+        }
+
+        let questions = AfficherQuestions(content, beginning);
+        if(questions.length===0){
+          console.log("Aucune question trouvee");
+         
+          continue;
+        }
+        let saisieCorrecte=false;
+        let index;
+        while(saisieCorrecte===false){
+          index = await ask("Saisissez l'indice de la question :");// a determiner avec une interface lors d'une saisie, indice permettant d'identifier la question
+          if(isNaN(index)){
+          console.log("Vous devez saisir un nombre");
+
+          }else{
+            saisieCorrecte=true;
+          }
+        }
+        index=Number(index);
+        let question = chooseQuestion(questions, index);
+        if(question===false){
+            console.log("Le nombre saisi ne correspond à aucun indice\nEchec de l'ajout de la question");
+            continue;
+        }
+        
+
+        displayQuestion(question);
+
+
+        result =await ask('Ajouter cette question ? : \n oui (1) \n non (2)\n');
+        saisieCorrecte=false;
+        while(saisieCorrecte===false){
+          if(isNaN(result)){
+            console.log("Vous devez saisir un nombre");
+            result =await ask('Ajouter cette question ? : \n oui (1) \n non (2)\n');
+          }else{
+            saisieCorrecte=true;
+          }
+        }
+        let accepter;
+        result=Number(result);
+        if (result === 1) {
+          accepter = true;
+        } else {
+          accepter = false;
+        }
+
+        if (accepter) {
+          addQuestion(testCreated, index, questions);
+        }
+        result = await ask('Terminer la creation du test ? : \n oui (1) \n non (2)\n');
+        saisieCorrecte=false;
+        while(saisieCorrecte===false){
+          if(isNaN(result)){
+            console.log("Vous devez saisir un nombre");
+            result =await ask('Terminer la creation du test ? : \n oui (1) \n non (2)\n');
+          }else{
+            saisieCorrecte=true;
+          }
+        }
+        result=Number(result);
+        if (result === 1) {
+          continuate = false;
+        } else {
+          continuate = true;
+        }
+
+
+      }
+      if (valider(testCreated) === true) {
+        console.log("Test ajoute avec succes !");
+
+
+      }else{
+        console.log("Echec de la creation du test");
+      }
+
+      continue;
+
+
+
+    }
+    console.log("Choix invalide.");
+
+  }
+
+  
+  }
+
 // LANCEMENT
 runMenu();
 
