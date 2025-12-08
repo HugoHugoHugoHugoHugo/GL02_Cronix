@@ -35,7 +35,7 @@ canvas : 3.2.0 (l'installer avec la commande ci-dessus)
 
 **Comment utiliser le logiciel ?**
 
-Après avoir installé canvas, allez dans votre console et mettez vous dans le répertoire du fichier cli.js (Projet_GL02_Cronix > src > cli > cli.js) et lancez la commande 
+Après avoir installé canvas, allez dans votre console et mettez vous dans le répertoire du fichier cli.js (Projet_GL02_Cronix > src > cli) et lancez la commande 
 ```bash 
 node cli.js 
 ```
