@@ -2,7 +2,7 @@
 
 Ce projet consiste à réaliser pour le Ministère de l’Éducation nationale de la République de Sealand un outil permettant aux enseignants de créer et de gérer des examens en ligne au format GIFT depuis une banque de questions certifiée. Egalement, on pourra assurer l’identification des enseignants via le format VCard et simuler la passation du test pour les étudiants. 
 
-**Membres:**
+**Membres :**
 
 BERMUDEZ Lucas,
 HUANG Jia Rui,
@@ -17,11 +17,13 @@ CHARLET-SOMLETTE Jules.
 
 **Aide et installation :**
 
-```bash
-npm install
+Naviguez vers le répertoire du CLI :
+
+```bash 
+cd Projet_GL02_Cronix/src/cli
 ```
 
-Au besoin : 
+Installez les dépendances requises :
 
 ```bash 
 npm install canvas 
@@ -29,7 +31,39 @@ npm install canvas
 
 **Dépendances:**
 
-canvas : 3.2.0
+canvas : 3.2.0 (l'installer avec la commande ci-dessus)
+
+**Comment utiliser le logiciel ?**
+
+Après avoir installé canvas, allez dans votre console et mettez vous dans le répertoire du fichier cli.js (Projet_GL02_Cronix > src > cli > cli.js) et lancez la commande 
+```bash 
+node cli.js 
+```
+Sélectionnez votre profil (en tapant 1, 2 ou 3 au clavier) :
+1. Etudiant
+2. Enseignant
+3. Gestionnaire
+
+Si vous vous êtes trompé dans le choix du profil, vous pouvez toujours revenir en arrière. 
+Une fois connecté à un profil, vous pourrez toujours quitter le programme en tapant 0 au clavier (correspond à l'option <code>0. Se déconnecter</code>).
+
+Un **étudiant** peut simuler un examen. Pour simuler un examen, rentrez le nom d'un fichier test présent dans Projet_GL02_Cronix > review. Par exemple, vous pouvez rentrer dans la console (ne pas oublier le nom de l'extension .gift) : <code>test_complet.gift</code>. Réalisez le test (test_complet est un peu long ne vous inquiètez pas, vous arriverez au bout).
+
+Un **professeur** est caractérisé par son ID (adresse e-mail) et son mot de passe. Quelques identifiants ont été créés pour que vous puissiez vous authentifier au début. 
+
+Les informations de connexion sont dans auth > teachers.txt.
+Voici un compte extrait de ce .txt :
+
+<code>ID:prof1@utt.fr
+mdp:password123</code>
+
+Un professeur peut concevoir un test, rechercher une question ou simuler un examen. Libre à vous d'essayer toutes ces fonctions ! Nous avons essayé de les rendre les plus intuitifs et guidés possibles.
+
+Enfin, le **gestionnaire** se connecte à l'aide de son mot de passe, présent dans auth > manager.txt.
+<i>Son mot de passe est 0102.</i>
+Il peut générer un historigramme, un vCard enseignant, profiler une banque de questions, comparer des profils, simuler un examen et, enfin, créer un compte Enseignant.
+
+Vous savez tout désormais, c'est à votre tour d'essayer !
 
 **Explications des écarts au cahier des charges:**
 
@@ -41,6 +75,36 @@ Pour la post-condition, ce qui a été fait est qu'une fois que l'étudiant term
 un rapport du test est créé (sous le format .json) et ce fichier est enregistré automatiquement dans
 le dossier "résultats" accessible uniquement par le professeur. On considère le professeur notifié 
 lorsqu'il verra apparaître le rapport dans ce fichier.
+
+Aussi nous avons ajouté une possibilité d'exporter les résultats (CSV, PNG, JSON). Ce n'était pas mentionné dans le cahier des charges, c'est donc un ajout de notre part.
+
+**Qui a fait quoi dans ce projet ?**
+
+BERMUDEZ Lucas :
+ - répartition des fonctions au début du projet,
+ - giftParserForConceptionTest.js,
+ - searchQuestion.js,
+ - Test.js,
+ - conceptionTest.js,
+ - displayQuestion.js,
+ - questionClassifier.js.
+
+HUANG Jia Rui :
+ - GenererFichierIdentification.js,
+ - AfficherProfil.js
+ - CreerHistogramme.js
+
+CHARLET SOMLETTE Jules :
+ - profiler.js,
+ - comparator.js,
+ - giftParser.js,
+ - simulateExam.js,
+ - config.js (gestion centralisée des chemins d'acccès du projet),
+ - authManager.js (système d'authentification),
+ - réorganisation propre du projet (voir structure à la fin du README). 
+
+Tout le monde : cli.js
+
 
 **Détails du projet :**
 
@@ -58,7 +122,7 @@ L'outil prend en entrée des fichiers GIFT contenant des questions du type :
 - Multiple choice (MC),
 - Open cloze,
 - Word formation,
-- Key word Transformation,
+- Key word Transformation (KWT),
 - Gap fill multi réponses,
 - Métadonnées ([html], $CATEGORY, etc.).
 
@@ -147,6 +211,7 @@ Le programme calcule et affiche la répartition des types de questions d’un ex
 
 Sortie :
 - histogramme ASCII et profil simple affichés en console.
+- exports optionnels en PNG et/ou CSV
 
 ---
 
@@ -198,7 +263,7 @@ Word formation :
 
 Tout est centralisé dans 
 
-<code> ./results/result_<fichier>_<timestamp>.json</code>
+<code> ./results/exam<fichier>_<timestamp>.json</code>
 
 Ce dossier est accessible que par les professeurs pour venir regarder les résultats de leurs étudiants. Chaque fichier contient l'identifiant de l'étudiant, son % de bonnes réponses, son nombre de bonnes réponses, son heure de passage de l'examen ainsi que toutes ses réponses et les réponses attendues détaillées.
 
@@ -207,3 +272,57 @@ Ce dossier est accessible que par les professeurs pour venir regarder les résul
 <p align="center">
   <img src="assets/organisation.png" alt="Structure du projet" width="500">
 </p>
+
+project/
+│
+├── assets/  # images du schéma de l'organisation
+│
+├── auth/
+│   ├── manager.txt
+│   └── teachers.txt
+│
+├── data/                   # fichiers GIFT bruts
+├── exports_profilage_png_csv # exports en PNG et csv 
+├── profils/  
+│   ├── profil1.json
+│   └── profil2.json
+│
+├── README.md
+├── .gitignore
+│
+├── results/                # résultats des examens
+├── review/                # examens
+│   ├── test_complet.gift
+│   ├── test1.gift
+│   └── test2.gift
+│
+├── src/
+│   ├── auth/ 
+│   │   └── authManager.js
+│   │
+│   ├── cli/ 
+│   │   └── cli.js
+│   │
+│   ├── config/ 
+│   │   └── config.js
+│   │
+│   ├── core/               # Modules logiques
+│   │   ├── comparator.js
+│   │   ├── conceptionTest.js
+│   │   ├── displayQuestion.js
+│   │   ├── giftParser.js
+│   │   ├── giftParserForConceptionTest.js
+│   │   ├── profiler.js
+│   │   ├── questionClassifier.js
+│   │   ├── searchQuestion.js
+│   │   ├── simulateExam.js
+│   │   └── Test.js
+│   │
+│   └── output/             # Modules de génération
+│       ├── AfficherProfil.js
+│       ├── CreerHistogramme.js
+│       └── GenererFichierIdentification.js
+│
+└── vCards
+    └── vcard_Jean_Claude_Pillot.vcf
+
