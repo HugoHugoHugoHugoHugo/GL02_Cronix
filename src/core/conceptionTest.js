@@ -168,7 +168,7 @@ export function ecrireTestFichier(testCreated){
         fileContent+=testCreated.questions[i].raw;
         fileContent+='\n';
     }
-    const fileName=`${testCreated.name}.gift`;
+    const fileName=`../../review/${testCreated.name}.gift`;
     if(fileContent.length>1){
         fs.writeFileSync(fileName,fileContent , "utf-8");
     }
