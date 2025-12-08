@@ -11,10 +11,25 @@ function ask(question) {
     input: process.stdin,
     output: process.stdout
   });
-  return new Promise(resolve => rl.question(question, ans => {
-    rl.close();
-    resolve(ans.trim());
-  }));
+  return new Promise(resolve =>
+    rl.question(question, ans => {
+      rl.close();
+      resolve(ans.trim());
+    })
+  );
+}
+
+function isValidEmail(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return regex.test(email);
+}
+
+async function askEmail() {
+  while (true) {
+    const email = await ask("Email : ");
+    if (isValidEmail(email)) return email;
+    console.log("Email invalide. Exemple attendu : nom.prenom@domaine.com");
+  }
 }
 
 export async function executerSP3() {
@@ -32,7 +47,7 @@ export async function executerSP3() {
     return;
   }
 
-  const email = await ask("Email : ");
+  const email = await askEmail();
   const tel = await ask("Téléphone (optionnel) : ");
   const matieres = await ask("Matières (séparées par virgules) : ");
   const etablissements = await ask("Établissements (séparés par virgules) : ");
@@ -52,7 +67,6 @@ NOTE:Matières: ${matieres} | Établissements: ${etablissements}
 END:VCARD
 `;
 
-  // Le dossier est créé automatiquement par ensureDirectories()
   if (!fs.existsSync(VCARDS_DIR)) {
     fs.mkdirSync(VCARDS_DIR, { recursive: true });
   }
