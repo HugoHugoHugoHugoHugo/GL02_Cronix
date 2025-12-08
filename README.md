@@ -63,7 +63,7 @@ Enfin, le **gestionnaire** se connecte à l'aide de son mot de passe, présent d
 
  - Son mot de passe est : 0102.
 
-Il peut générer un historigramme, un vCard enseignant, profiler une banque de questions, comparer des profils, simuler un examen et, enfin, créer un compte Enseignant.
+Il peut générer un histogramme, un vCard enseignant, profiler une banque de questions, comparer des profils, simuler un examen et, enfin, créer un compte Enseignant.
 
 Vous savez tout désormais, c'est à votre tour d'essayer !
 
