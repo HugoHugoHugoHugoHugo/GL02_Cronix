@@ -1,34 +1,31 @@
 // giftParser.js
-
 import fs from "fs";
 
 export function parseGiftFile(path) {
   const raw = fs.readFileSync(path, "utf8");
-
   const cleaned = raw
     .replace(/\r/g, "")
-    .replace(/\/\/.*$/gm, "")
+    .replace(/\/\/.*$/gm, "")  // Supprimer commentaires
     .trim();
 
-  // Split all blocks
+  // Découpage par "::titre::"
   const blocks = cleaned.split(/\n\s*::/g);
-
   const questions = [];
-  let currentContext = null;  // type deduced from instructions
 
   for (let block of blocks) {
     block = block.trim();
     if (!block) continue;
     if (!block.startsWith("::")) block = "::" + block;
 
-    // Identify title
+    // Extraction titre
     const titleMatch = block.match(/^::([^:]+)::/);
     if (!titleMatch) continue;
 
     const title = titleMatch[1].trim();
     const body = block.slice(titleMatch[0].length).trim();
 
-    // Check if this is an INSTRUCTION (no { } block)
+    // 1. INSTRUCTION
+
     if (!body.includes("{")) {
       questions.push({
         type: "INSTRUCTION",
@@ -36,93 +33,134 @@ export function parseGiftFile(path) {
         text: body,
         answers: []
       });
-
-      // detect context from instruction text
-      const low = body.toLowerCase();
-      if (low.includes("choose the correct") || low.includes("best answer") || low.includes("multiple choice"))
-        currentContext = "MCQ";
-      else if (low.includes("complete the sentences") && low.includes("one word"))
-        currentContext = "OPEN";
-      else if (low.includes("complete the sentences") || low.includes("think of the word"))
-        currentContext = "OPEN";
-      else if (low.includes("key word") || low.includes("word formation"))
-        currentContext = "KWT";
-      else
-        currentContext = null;
-
       continue;
     }
 
-    // Extract { ... } blocks - INCLUDING {1:MC:...} and {1:SA:...} formats
-    const rawBlocks = [...body.matchAll(/\{([^}]*)\}/g)].map(m => m[1].trim());
+    // 2. Extraire tous les blocs {…}
 
-    if (rawBlocks.length === 0) continue;
+    const rawBlocks = [...body.matchAll(/\{([\s\S]*?)\}/g)];
+    if (rawBlocks.length === 0) {
+      continue;
+    }
 
-    // Detect question type from the blocks
     let type = null;
     const answers = [];
 
-    for (const rawBlock of rawBlocks) {
-      // Check for {1:MC:...} format (Multiple Choice)
+    for (const match of rawBlocks) {
+      const rawBlock = match[1].trim();
+
+      if (rawBlock.includes("\n") && rawBlock.match(/^[~=]/m)) {
+        type = "multiple";
+        const lines = rawBlock
+          .split(/\n+/)
+          .map(l => l.trim())
+          .filter(l => l.length > 0);
+
+        const correctAnswers = [];
+        const allChoices = [];
+
+        for (const line of lines) {
+          // La bonne réponse commence par = (peut être suivi de ~)
+          if (line.startsWith("=") || line.startsWith("~=")) {
+            const answer = line.replace(/^~?=/, "").trim();
+            correctAnswers.push(answer);
+            allChoices.push(answer);
+          } else if (line.startsWith("~")) {
+            const answer = line.substring(1).trim();
+            allChoices.push(answer);
+          }
+        }
+        
+        // Stocker toutes les réponses pour l'affichage
+        answers.push(...allChoices);
+        
+        // Marquer les bonnes réponses en premier pour la correction
+        answers.correctAnswers = correctAnswers;
+        
+        continue;
+      }
+
+      // FORMAT {1:MC:...}
       if (rawBlock.startsWith("1:MC:")) {
         type = "multiple";
-        const content = rawBlock.substring(5); // Remove "1:MC:"
-        // Extract choices: ~=correct ~wrong ~wrong
-        const choices = content.split("~").filter(c => c.trim());
-        answers.push(...choices.map(c => c.replace(/^=/, "").trim()));
+        const content = rawBlock.substring(5);
+        const parts = content.split("~").filter(x => x.trim());
+        for (const part of parts) {
+          answers.push(part.replace(/^=/, "").trim());
+        }
+        continue;
       }
-      // Check for {1:SA:...} format (Short Answer)
-      else if (rawBlock.startsWith("1:SA:")) {
+
+      // FORMAT {1:SA:...}
+      if (rawBlock.startsWith("1:SA:")) {
         type = "courte";
-        const content = rawBlock.substring(5); // Remove "1:SA:"
-        // Extract answers: =answer1~=answer2
-        const answerList = content.split("~").filter(c => c.trim());
-        answers.push(...answerList.map(a => a.replace(/^=/, "").trim()));
+        const content = rawBlock.substring(5);
+        const parts = content.split("~").filter(x => x.trim());
+        for (const p of parts) {
+          answers.push(p.replace(/^=/, "").trim());
+        }
+        continue;
       }
-      // Standard GIFT formats
-      else if (rawBlock.includes("~")) {
+
+      // Format: {=answer1 =answer2#feedback}
+      if (/^=.*=/.test(rawBlock) && !rawBlock.includes("~")) {
+        type = "courte";
+        // Séparer par = et # pour extraire les réponses
+        const withoutFeedback = rawBlock.split("#")[0];
+        const parts = withoutFeedback
+          .split("=")
+          .map(x => x.trim())
+          .filter(Boolean);
+        answers.push(...parts);
+        continue;
+      }
+
+      // QCM standard {~bad~=good~bad}
+      if (rawBlock.includes("~") && (rawBlock.includes("=") || rawBlock.match(/^~/))) {
         type = "multiple";
-        const choices = [...rawBlock.matchAll(/(~|=)([^~=}]+)/g)].map(m => m[2].trim());
-        answers.push(...choices);
+        const parts = [...rawBlock.matchAll(/(~|=)\s*([^~=}]+)/g)];
+        for (const p of parts) {
+          answers.push(p[2].trim());
+        }
+        continue;
       }
+
       // True/False
-      else if (rawBlock.toLowerCase() === "true" || rawBlock.toLowerCase() === "false" ||
-               rawBlock === "T" || rawBlock === "F") {
+      if (["true", "false", "t", "f"].includes(rawBlock.toLowerCase())) {
         type = "vrai_faux";
         answers.push(rawBlock);
+        continue;
       }
-      // Numeric
-      else if (/^\d+([.,]\d+)?(\.\.\d+([.,]\d+)?)?$/.test(rawBlock)) {
+
+      // Numérique
+      if (/^\d+([.,]\d+)?(\.\.\d+([.,]\d+)?)?$/.test(rawBlock)) {
         type = "numerique";
         answers.push(rawBlock);
+        continue;
       }
-      // Single answer with =
-      else if (rawBlock.includes("=")) {
-        const parts = rawBlock.split(/=|\|/).map(x => x.trim()).filter(Boolean);
-        if (parts.length > 1) {
-          type = "mot_manquant";
-        } else {
-          type = "courte";
-        }
-        answers.push(...parts);
-      }
-      // Default: courte
-      else {
-        if (!type) type = "courte";
-        answers.push(rawBlock);
-      }
-    }
 
-    // Override with context if available
-    if (currentContext === "MCQ") type = "multiple";
-    else if (currentContext === "OPEN") type = "courte";
-    else if (currentContext === "KWT") type = "mot_manquant";
+      // Single answer avec = (sans ~)
+      if (rawBlock.includes("=") && !rawBlock.includes("~")) {
+        type = "courte";
+        const withoutFeedback = rawBlock.split("#")[0];
+        const parts = withoutFeedback
+          .split(/[=|]/)
+          .map(x => x.trim())
+          .filter(Boolean);
+        answers.push(...parts);
+        continue;
+      }
+
+      // Fallback: réponse simple
+      if (!type) type = "courte";
+      answers.push(rawBlock);
+    }
 
     questions.push({
       title,
-      type: type || "inconnu",
+      type: type || "courte",
       text: body,
-      answers: answers.filter(a => a && a.length > 0)
+      answers
     });
   }
 
