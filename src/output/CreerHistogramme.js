@@ -1,16 +1,13 @@
 // CreerHistogramme.js
-// SP6.2 : Calcul d'un profil simple à partir d'un fichier .gift
-// Version robuste : utilise parseGiftFile/classifyQuestion si dispo,
-// sinon fallback GIFT parsing + heuristiques => impossible d'avoir tout 0
-// tant que le fichier contient des questions.
+// Calcul d'un profil à partir d'un fichier .gift
 
 import fs from "fs";
 import { parseGiftFile } from "../core/giftParser.js";
 import { classifyQuestion } from "../core/questionClassifier.js";
 
-// -------------------------
+
 // Normalisation classique
-// -------------------------
+
 function normalizeType(t) {
   const type = (t || "").toString().trim().toUpperCase();
 
@@ -24,16 +21,12 @@ function normalizeType(t) {
   return null;
 }
 
-// -------------------------
 // Fallback : split GIFT
-// -------------------------
+
 function splitGiftQuestions(content) {
-  // Nettoyage BOM + normalisation
+  //nettoyage
   const txt = content.replace(/\uFEFF/g, "").trim();
 
-  // Les questions GIFT sont souvent séparées par 1+ lignes vides
-  // et commencent souvent par ::Titre::
-  // On split sur double saut de ligne.
   const rawBlocks = txt.split(/\n\s*\n+/);
 
   // Garder blocs significatifs
@@ -42,9 +35,6 @@ function splitGiftQuestions(content) {
     .filter(b => b.length > 0);
 }
 
-// -------------------------
-// Fallback : detect type from raw GIFT block
-// -------------------------
 function detectTypeFromGiftBlock(block) {
   const b = block.toUpperCase();
 
@@ -58,8 +48,7 @@ function detectTypeFromGiftBlock(block) {
   if (/->/.test(b)) return "Corresp";
 
   // CLOZE / TROUS : plusieurs champs {=...} dans une phrase, ou {~...}
-  // (souvent utilisé pour trous)
-  // On considère "Trous" si on voit au moins 2 accolades de réponse
+
   const braceAnswers = (block.match(/\{[^}]*\}/g) || []);
   if (braceAnswers.length >= 2) return "Trous";
 
@@ -73,9 +62,9 @@ function detectTypeFromGiftBlock(block) {
   return "QRO";
 }
 
-// -------------------------
+
 // MAIN
-// -------------------------
+
 export function CreerHistogramme(pathGift) {
   if (!pathGift) return null;
   if (!fs.existsSync(pathGift)) {
@@ -94,9 +83,7 @@ export function CreerHistogramme(pathGift) {
     Trous: 0
   };
 
-  // ======================================================
-  // 1) TENTATIVE "PROPRE" AVEC LES MODULES DU GROUPE
-  // ======================================================
+
   let questions = null;
 
   // parseGiftFile peut attendre soit un chemin soit du contenu
@@ -140,9 +127,6 @@ export function CreerHistogramme(pathGift) {
     // Sinon on tombe en fallback
   }
 
-  // ======================================================
-  // 2) FALLBACK ROBUSTE => IMPOSSIBLE TOUT 0
-  // ======================================================
   const blocks = splitGiftQuestions(content);
 
   for (const block of blocks) {
