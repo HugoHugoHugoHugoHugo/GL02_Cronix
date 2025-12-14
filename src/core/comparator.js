@@ -43,7 +43,7 @@ export function printComparison(diff) {
     return;
   }
 
-  // En-tête du tableau
+  // En tête du tableau
   console.log(`${"TYPE".padEnd(18)} ${"RÉFÉRENCE".padEnd(15)} ${"CIBLE".padEnd(15)} ${"VARIATION"}`);
   console.log("─".repeat(70));
 
