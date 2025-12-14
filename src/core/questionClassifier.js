@@ -7,10 +7,10 @@ export function classifyQuestion(q) {
 
   const answers = q.answers;
 
-  // Si aucune réponse → question ouverte
+  // Si aucune réponse : question ouverte
   if (!answers || answers.length === 0) return "ouverte";
 
-  // Vrai/Faux
+  // vrai/faux
   if (answers.length === 1 &&
       (answers[0].toLowerCase() === "true" || 
        answers[0].toLowerCase() === "false" ||
@@ -23,7 +23,7 @@ export function classifyQuestion(q) {
   const numericRegex = /^\d+([.,]\d+)?(\.\.\d+([.,]\d+)?)?$/;
   if (answers.every(a => numericRegex.test(a))) return "numerique";
 
-  // Plusieurs réponses correctes → QCM / transformation / courte multi-réponses
+  // Plusieurs réponses correctes type QCM / transformation / courte multi réponses
   if (answers.length > 1) return "multiple";
 
   // Une seule réponse textuelle courte
