@@ -5,326 +5,218 @@ import fs from "fs";
 import path from "path";
 import { parseGiftFile } from "./giftParser.js";
 
-function makeRl() {
-  return readline.createInterface({ input: process.stdin, output: process.stdout });
-}
-
-function askOnce(prompt) {
-  const rl = makeRl();
-  return new Promise(resolve => {
-    rl.question(prompt, ans => {
-      rl.close();
-      resolve((ans || "").trim());
-    });
-  });
-}
-
-function normalizeAnswer(str = "") {
-  return str
-    .toLowerCase()
-    .replace(/[.,;:!?]/g, "")
-    .replace(/\s+/g, " ")
-    .replace(/'/g, "'")
-    .trim();
+function rlPrompt(q) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(res => rl.question(q, ans => {
+    rl.close();
+    res(ans.trim());
+  }));
 }
 
 function cleanHtml(text) {
   return text
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/?(b|i|strong|em|blockquote|div)[^>]*>/gi, "")
+    .replace(/<\/?(b|i|u|strong|em|div|blockquote)[^>]*>/gi, "")
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-async function askChoice(prompt, max) {
-  while (true) {
-    const x = await askOnce(prompt);
-    const n = Number(x);
-    if (Number.isInteger(n) && n >= 1 && n <= max) return n - 1;
-    console.log(`Entrée invalide – entrez un numéro entre 1 et ${max}.`);
-  }
+function normalizeAns(s) {
+  return s.toLowerCase()
+    .replace(/[.,;:!?]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-/**
- * Extrait tous les blocs {1:MC:...} ou {1:SA:...} d'un texte
- */
-function extractAnswerBlocks(text) {
-  const blocks = [];
-  const regex = /\{([^}]+)\}/g;
-  let match;
-  
-  while ((match = regex.exec(text)) !== null) {
-    blocks.push({
-      fullMatch: match[0],
-      content: match[1],
-      index: match.index
-    });
+// extraction de tous les {...}
+function extractBlocks(t) {
+  const out = [];
+  const re = /\{([\s\S]*?)\}/g;
+  let m;
+  while ((m = re.exec(t)) !== null) {
+    out.push({ full: m[0], content: m[1], index: m.index });
   }
-  
-  return blocks;
+  return out;
 }
 
-/**
- * Décompose une question avec plusieurs blancs en sous-questions
- */
-function splitMultipleGaps(question) {
-  const blocks = extractAnswerBlocks(question.text);
-  
-  if (blocks.length <= 1) {
-    return [question]; // Une seule question
-  }
-  
-  // Créer une sous-question pour chaque blanc
-  const subQuestions = [];
-  
+// remplacer tous les blocs par des blancs
+function replaceBlocksWithBlanks(text) {
+  return text.replace(/\{[\s\S]*?\}/g, "______");
+}
+
+// décomposition des multi gaps
+function expandMultiGap(q) {
+  const blocks = extractBlocks(q.text);
+  if (blocks.length <= 1) return [q];
+
+  const subs = [];
   for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    
-    // Extraire le contexte autour du blanc
-    const textBefore = question.text.substring(0, block.index);
-    const textAfter = question.text.substring(block.index + block.fullMatch.length);
-    
-    // Trouver la phrase qui contient ce blanc
-    const sentences = question.text.split(/[.!?]+/);
-    let relevantSentence = "";
-    
-    for (const sentence of sentences) {
-      if (sentence.includes(block.fullMatch)) {
-        relevantSentence = sentence.trim();
-        break;
-      }
-    }
-    
-    subQuestions.push({
-      ...question,
-      title: `${question.title} - Gap ${i + 1}`,
-      text: relevantSentence || question.text,
-      answerBlock: block,
-      gapNumber: i + 1,
-      totalGaps: blocks.length
+    const b = blocks[i];
+    const before = q.text.slice(0, b.index);
+    const after  = q.text.slice(b.index + b.full.length);
+
+    const sent = q.text.split(/[.!?]/).find(s => s.includes(b.full)) || q.text;
+
+    subs.push({
+      ...q,
+      title: `${q.title} – Gap ${i + 1}`,
+      text: sent,
+      block: b,
+      gap: i + 1,
+      total: blocks.length
     });
   }
-  
-  return subQuestions;
+  return subs;
 }
 
 export async function simulateGiftTest(filePath) {
-  // Parse fichier
-  let questions;
-  try {
-    questions = parseGiftFile(filePath);
-  } catch (e) {
-    console.error("Erreur parsing :", e);
-    return;
-  }
+  const questions = parseGiftFile(filePath);
 
-  if (!questions || questions.length === 0) {
-    console.log("Aucune question trouvée.");
-    return;
-  }
-
-  // ID étudiant
-  const studentId = await askOnce("Identifiant étudiant (optionnel) : ");
-
-  console.log("\n╔════════════════════════════════════════════════════════════════╗");
-  console.log("║                        DÉBUT DU TEST                           ║");
-  console.log("╚════════════════════════════════════════════════════════════════╝\n");
-
-  // Afficher les consignes
   const instructions = questions.filter(q => q.type === "INSTRUCTION");
-  let realQuestions = questions.filter(q => q.type !== "INSTRUCTION");
+  let real = questions.filter(q => q.type !== "INSTRUCTION");
+
+  const studentId = await rlPrompt("Identifiant étudiant : ");
+
+  console.log("\n=== DÉBUT DU TEST ===\n");
 
   if (instructions.length > 0) {
     console.log("📋 CONSIGNES :\n");
-    for (const instr of instructions) {
-      console.log(`${cleanHtml(instr.text)}\n`);
+    for (const i of instructions) {
+      // Nettoyer les instructions aussi
+      const cleanedInstructions = cleanHtml(replaceBlocksWithBlanks(i.text));
+      console.log(cleanedInstructions + "\n");
     }
-    console.log("─".repeat(70) + "\n");
+    console.log("──────────────────────────────────────────────\n");
   }
 
-  // Décomposer les questions avec plusieurs blancs
-  const expandedQuestions = [];
-  for (const q of realQuestions) {
-    const subQuestions = splitMultipleGaps(q);
-    expandedQuestions.push(...subQuestions);
-  }
-
-  if (expandedQuestions.length === 0) {
-    console.log("Aucune question à répondre trouvée.");
-    return;
-  }
+  const expanded = [];
+  for (const q of real) expanded.push(...expandMultiGap(q));
 
   const answers = [];
-  let questionNumber = 1;
+  let index = 1;
 
-  for (const q of expandedQuestions) {
-    console.log(`\n╭${"─".repeat(68)}╮`);
-    console.log(`│ Question ${questionNumber}/${expandedQuestions.length}`.padEnd(69) + "│");
-    console.log(`│ ${q.title}`.padEnd(69) + "│");
-    console.log(`╰${"─".repeat(68)}╯\n`);
+  for (const q of expanded) {
+    console.log(`\n---- Question ${index}/${expanded.length} ----`);
+    console.log(q.title);
 
-    let userAnswer = "";
-    let correctAnswers = [];
+    let user = "";
+    let correct = [];
+    let block = q.block || extractBlocks(q.text)[0];
 
-    // Si c'est une sous-question avec un bloc spécifique
-    if (q.answerBlock) {
-      const block = q.answerBlock;
-      const choicesBlock = block.content;
+    // Nettoyer le texte avant affichage
+    let displayText = replaceBlocksWithBlanks(q.text);
+    
+    // Ensuite, si c'est un multi-gap, on doit montrer le contexte complet
+    // mais avec un seul blanc à remplir (celui de la question actuelle)
+    // Les autres blancs restent des ______
+    
+    const questionText = cleanHtml(displayText);
+    console.log("\n" + questionText + "\n");
 
-      if (q.type === "multiple") {
-        // QCM
-        let choices = [];
-        let correctChoice = "";
+    const raw = block.content.trim();
 
-        // Format {1:MC:~=correct~wrong~wrong}
-        if (choicesBlock.includes("1:MC:")) {
-          const content = choicesBlock.substring(choicesBlock.indexOf("1:MC:") + 5);
-          const parts = content.split("~").filter(p => p.trim());
-          
-          for (const part of parts) {
-            if (part.startsWith("=")) {
-              correctChoice = part.substring(1).trim();
-              choices.push(correctChoice);
-            } else {
-              choices.push(part.trim());
-            }
+    if (q.type === "multiple") {
+
+      // MCQ multi-ligne
+      if (raw.includes("\n") && raw.match(/^[~=]/m)) {
+        const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+
+        const choices = [];
+        const correctAnswers = [];
+        
+        for (const line of lines) {
+          // La bonne réponse peut être ~= ou juste =
+          if (line.startsWith("=") || line.startsWith("~=")) {
+            const answer = line.replace(/^~?=/, "").trim();
+            choices.push(answer);
+            correctAnswers.push(answer);
+          } else if (line.startsWith("~")) {
+            const answer = line.substring(1).trim();
+            choices.push(answer);
           }
         }
-        // Format standard {~wrong~=correct~wrong}
-        else {
-          const parts = choicesBlock.split(/[~=]/).filter(p => p.trim());
-          choices = parts;
-          const correctMatch = choicesBlock.match(/=([^~}]+)/);
-          correctChoice = correctMatch ? correctMatch[1].trim() : "";
-        }
 
-        // Afficher le texte avec le blanc marqué
-        const questionText = cleanHtml(q.text.replace(block.fullMatch, "______"));
-        console.log(questionText + "\n");
+        choices.forEach((c, i) => console.log(` ${i + 1}. ${c}`));
 
-        // Afficher les choix
-        console.log("Choix disponibles :");
-        choices.forEach((choice, i) => {
-          console.log(`  ${i + 1}. ${choice}`);
-        });
-
-        const idx = await askChoice(`\n➤ Votre réponse (1-${choices.length}) : `, choices.length);
-        userAnswer = choices[idx];
-        correctAnswers = [correctChoice];
+        const pick = Number(await rlPrompt(`Votre choix (1-${choices.length}) : `));
+        user = choices[pick - 1] || "";
+        correct = correctAnswers;
       }
-      else if (q.type === "courte" || q.type === "mot_manquant") {
-        // Question à réponse courte
-        const questionText = cleanHtml(q.text.replace(block.fullMatch, "______"));
-        console.log(questionText + "\n");
 
-        // Format {1:SA:=answer}
-        if (choicesBlock.includes("1:SA:")) {
-          const content = choicesBlock.substring(choicesBlock.indexOf("1:SA:") + 5);
-          const answerParts = content.split("~").filter(a => a.trim());
-          
-          for (const ans of answerParts) {
-            if (ans.startsWith("=")) {
-              correctAnswers.push(ans.substring(1).trim());
-            }
-          }
-        }
-        // Format standard {=answer}
-        else {
-          const parts = choicesBlock.split(/[=~]/).filter(p => p.trim());
-          correctAnswers.push(...parts);
-        }
+      // MCQ compact (~wrong =correct)
+      else {
+        const parts = [...raw.matchAll(/(~|=)\s*([^~=}]+)/g)].map(x => x[2].trim());
+        let correctMatch = raw.match(/=\s*([^~=}]+)/);
+        correct = correctMatch ? [correctMatch[1].trim()] : [parts[0]];
 
-        userAnswer = await askOnce("➤ Votre réponse : ");
+        parts.forEach((c, i) => console.log(` ${i + 1}. ${c}`));
+        const pick = Number(await rlPrompt(`Votre choix (1-${parts.length}) : `));
+        user = parts[pick - 1] || "";
       }
     }
-    // Question simple (pas de sous-question)
-    else {
-      const blocks = extractAnswerBlocks(q.text);
-      
-      if (blocks.length === 0) {
-        console.log("Question sans réponse détectée, passage à la suivante.");
-        continue;
-      }
 
-      const block = blocks[0];
-      const choicesBlock = block.content;
+    else if (q.type === "courte" || q.type === "mot_manquant") {
 
-      if (q.type === "vrai_faux") {
-        const questionText = cleanHtml(q.text.replace(block.fullMatch, ""));
-        console.log(questionText + "\n");
-        
-        console.log("Répondez par :");
-        console.log("  1. Vrai");
-        console.log("  2. Faux");
-        
-        const idx = await askChoice("\n➤ Votre réponse (1-2) : ", 2);
-        userAnswer = idx === 0 ? "true" : "false";
-        correctAnswers = q.answers || [];
-      }
-      else if (q.type === "numerique") {
-        const questionText = cleanHtml(q.text.replace(block.fullMatch, "______"));
-        console.log(questionText + "\n");
-        
-        userAnswer = await askOnce("➤ Votre réponse (numérique) : ");
-        correctAnswers = q.answers || [];
+      // 1:SA:
+      if (raw.startsWith("1:SA:")) {
+        const cont = raw.substring(5);
+        const all = cont
+          .split("~")
+          .map(x => x.trim())
+          .filter(Boolean)
+          .map(x => x.replace(/^=/, "").trim());
+        correct.push(...all);
       }
       else {
-        const questionText = cleanHtml(q.text.replace(block.fullMatch, "______"));
-        console.log(questionText + "\n");
-        
-        userAnswer = await askOnce("➤ Votre réponse : ");
-        correctAnswers = q.answers || [];
+        const parts = raw.split(/[=~]/).map(x => x.trim()).filter(Boolean);
+        correct.push(...parts);
       }
+
+      user = await rlPrompt("Votre réponse : ");
+    }
+
+    else if (q.type === "vrai_faux") {
+      console.log("1. Vrai\n2. Faux");
+      const pick = Number(await rlPrompt("Votre choix (1-2) : "));
+      user = pick === 1 ? "true" : "false";
+      correct = q.answers;
+    }
+
+    else {
+      user = await rlPrompt("Votre réponse : ");
+      correct = q.answers;
     }
 
     answers.push({
-      questionNumber,
-      questionTitle: q.title,
-      questionType: q.type,
-      userAnswer,
-      correctAnswers,
-      timestamp: new Date().toISOString()
+      question: q.title,
+      user,
+      correct
     });
 
-    console.log("✓ Réponse enregistrée.");
-    questionNumber++;
+    index++;
   }
 
-  console.log("\n╔════════════════════════════════════════════════════════════════╗");
-  console.log("║                        TEST TERMINÉ                            ║");
-  console.log("╚════════════════════════════════════════════════════════════════╝\n");
-
-  // -------------- ÉVALUATION (non affichée à l'étudiant) ------------------
-  let correctCount = 0;
-
+  // Correction (non affichée pour les étudiants)
+  let good = 0;
   for (const a of answers) {
-    const userNorm = normalizeAnswer(a.userAnswer);
-
-    if (!a.correctAnswers || a.correctAnswers.length === 0) {
-      continue;
-    }
-
-    // Vérifier si la réponse correspond à l'une des réponses acceptées
-    for (const exp of a.correctAnswers) {
-      if (normalizeAnswer(exp) === userNorm) {
-        correctCount++;
+    const u = normalizeAns(a.user);
+    for (const c of a.correct) {
+      if (normalizeAns(c) === u) {
+        good++;
         break;
       }
     }
   }
 
-  const percent = answers.length > 0
-    ? +(correctCount / answers.length * 100).toFixed(1)
-    : 0;
+  const percent = +(good / answers.length * 100).toFixed(1);
 
-  // -------------- RENVOI DU RAPPORT AU CLI -------------------
   return {
     studentId: studentId || "anonyme",
     file: path.basename(filePath),
     timestamp: new Date().toISOString(),
     totalQuestions: answers.length,
-    correctCount,
+    correctCount: good,
     percent,
     answers
   };
