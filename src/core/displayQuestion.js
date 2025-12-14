@@ -19,7 +19,7 @@ export function displayQuestion(question){
     console.log("title : "+question.title);
     console.log("text : "+question.text);
     
-    //---utilisation d'un nouveau parseur si il y a besoin d'interpreter un format (ex : html)
+    //utilisation d'un nouveau parseur si il y a besoin d'interpreter un format (ex : html)
     
         let answers=question.answers;
         console.log("Answers : ");
@@ -86,4 +86,3 @@ export function displayQuestion(question){
 
     
     
-
