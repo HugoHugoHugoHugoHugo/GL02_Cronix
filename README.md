@@ -8,6 +8,12 @@ Ce projet consiste à réaliser pour le Ministère de l’Éducation nationale d
  - HUANG Jia Rui,
  - CHARLET-SOMLETTE Jules.
 
+**License :**
+
+MIT/BSD
+
+Voir fichier LICENSE
+
 **Langage:**
 
  Javascript
