@@ -2,7 +2,7 @@
 
 Ce projet consiste à réaliser pour le Ministère de l’Éducation nationale de la République de Sealand un outil permettant aux enseignants de créer et de gérer des examens en ligne au format GIFT depuis une banque de questions certifiée. Egalement, on pourra assurer l’identification des enseignants via le format VCard et simuler la passation du test pour les étudiants. 
 
-**Membres :**
+**Auteurs :**
 
  - BERMUDEZ Lucas,
  - HUANG Jia Rui,
@@ -17,7 +17,7 @@ Ce projet consiste à réaliser pour le Ministère de l’Éducation nationale d
 
 **Aide et installation :**
 
-Naviguez vers le répertoire du CLI :
+Naviguez vers le répertoire de l'application :
 
 ```bash 
 cd Projet_GL02_Cronix/src/cli
@@ -26,12 +26,12 @@ cd Projet_GL02_Cronix/src/cli
 Installez les dépendances requises :
 
 ```bash 
-npm install canvas 
+npm install
 ```
 
 **Dépendances:**
 
-canvas : 3.2.0 (l'installer avec la commande ci-dessus)
+canvas : 3.2.0
 
 **Comment utiliser le logiciel ?**
 
