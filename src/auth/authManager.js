@@ -17,7 +17,8 @@ export function initAuthFiles() {
 
   // Créer fichier enseignants par défaut
   if (!fs.existsSync(TEACHERS_FILE)) {
-
+    
+    //Non sécurisé, laissé tel quel car ces mots de passe sont déjà disponibles dans le README
     const salt = bcrypt.genSaltSync(10);
     const hash1 = bcrypt.hashSync("password123", salt);
     const hash2 = bcrypt.hashSync("secure456", salt);
@@ -35,7 +36,8 @@ mdp:${hash2}
 
   // Créer fichier gestionnaire par défaut
   if (!fs.existsSync(MANAGER_FILE)) {
-
+    
+    //Non sécurisé, laissé tel quel car ce mot de passe est déjà disponibles dans le README
     const salt = bcrypt.genSaltSync(10);
     const hash3 = bcrypt.hashSync("0102", salt);
 
