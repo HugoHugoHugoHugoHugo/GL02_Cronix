@@ -58,7 +58,7 @@ Un **étudiant** peut simuler un examen. Pour simuler un examen, rentrez le nom 
 
 Un **professeur** est caractérisé par son ID (adresse e-mail) et son mot de passe. Quelques identifiants ont été créés pour que vous puissiez vous authentifier au début. 
 
-Les informations de connexion sont dans auth > teachers.txt.
+Les informations de connexion sont contenues dans auth > teachers.txt. Les mots de passe sont cryptés.
 Voici un compte extrait de ce .txt :
 
 <code>ID:prof1@utt.fr
@@ -66,7 +66,7 @@ mdp:password123</code>
 
 Un professeur peut concevoir un test, rechercher une question ou simuler un examen. Libre à vous d'essayer toutes ces fonctions ! Nous avons essayé de les rendre les plus intuitives et guidées possibles.
 
-Enfin, le **gestionnaire** se connecte à l'aide de son mot de passe, présent dans auth > manager.txt.
+Enfin, le **gestionnaire** se connecte à l'aide de son mot de passe, présent dans auth > manager.txt et crypté.
 
  - Son mot de passe est : 0102.
 
