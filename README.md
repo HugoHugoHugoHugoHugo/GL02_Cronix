@@ -37,7 +37,7 @@ npm install
 
 **Dépendances:**
 
-canvas : 3.2.0
+canvas : 3.2.0\n
 bcrypt : 6.0.0
 
 **Comment utiliser le logiciel ?**
