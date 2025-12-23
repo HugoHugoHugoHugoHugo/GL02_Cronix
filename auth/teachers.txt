@@ -1,7 +1,8 @@
-# IDENTIFIANTS ET MOTS DE PASSE ENSEIGNANTS.
-
 ID:prof1@utt.fr
-mdp:$2b$10$RsbtQ9ExK2BnXJ4vftMIFuPanGJyNfzqz.SzJeS.FRVAVandhI6QG
+mdp:$2b$10$Z02AbclvXra2Iy0j4t9IU.73jEzEd9ypdAghMFjyTaO9MWBafHue2
 
-ID:hugo@utt.fr
-mdp:$2b$10$5ImXU/wt60eBJnfVStUziOqKyaWBj/8zDQW/97dqxIYAAfdPlKNt2
+ID:prof2@utt.fr
+mdp:$2b$10$Z02AbclvXra2Iy0j4t9IU.rMll8yLtqVLoPAxD6UAvCz25gpWDR1a
+
+ID:hugo.benoit@utt.fr
+mdp:$2b$10$.4OC42c3bM7f3vdJihqwROP.T9c3DJgYcqMSuz52xCByn8rm.c/W2

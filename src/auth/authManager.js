@@ -17,11 +17,17 @@ export function initAuthFiles() {
 
   // Créer fichier enseignants par défaut
   if (!fs.existsSync(TEACHERS_FILE)) {
+
+    const salt = bcrypt.genSaltSync(10);
+    const hash1 = bcrypt.hashSync("password123", salt);
+    const hash2 = bcrypt.hashSync("secure456", salt);
+
+
     const defaultTeachers = `ID:prof1@utt.fr
-mdp:password123
+mdp:${hash1}
 
 ID:prof2@utt.fr
-mdp:secure456
+mdp:${hash2}
 `;
     fs.writeFileSync(TEACHERS_FILE, defaultTeachers, "utf8");
     console.log(`📁 Fichier créé : ${TEACHERS_FILE}`);
@@ -29,7 +35,12 @@ mdp:secure456
 
   // Créer fichier gestionnaire par défaut
   if (!fs.existsSync(MANAGER_FILE)) {
-    const defaultManager = "mdp:admin2024\n";
+
+    const salt = bcrypt.genSaltSync(10);
+    const hash3 = bcrypt.hashSync("0102", salt);
+
+
+    const defaultManager = `mdp:${hash3}\n`;
     fs.writeFileSync(MANAGER_FILE, defaultManager, "utf8");
     console.log(`📁 Fichier créé : ${MANAGER_FILE}`);
   }
