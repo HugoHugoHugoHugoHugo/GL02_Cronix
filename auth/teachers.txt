@@ -14,3 +14,6 @@ mdp:abc
 
 ID:test@gmail.com
 mdp:1234
+
+ID:hugo.benoit@utt.fr
+mdp:password123

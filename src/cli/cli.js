@@ -6,6 +6,7 @@ import readline from "readline";
 
 // Config centralisée
 import { 
+  PROJECT_ROOT,
   REVIEW_DIR, 
   RESULTS_DIR, 
   DATA_DIR, 
@@ -796,7 +797,11 @@ Connecté en tant que : ${user.id}
             continue;
           }
           
+          console.log(file.endsWith(".gift"));
+
           const filePath = resolvePath(file);
+
+          console.log('Trigger1');
 
           if (!fs.existsSync(filePath)) {
             console.log(`\n❌ Le fichier n'existe pas : ${filePath}`);
