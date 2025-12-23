@@ -265,7 +265,7 @@ async function authenticate() {
 
         const password = await ask("Mot de passe : ");
         
-        if (checkTeacherPassword(id, password)) {
+        if (await checkTeacherPassword(id, password)) {
           console.log(`\n✅ Bienvenue ${id} !\n`);
           return { role: "teacher", id, authenticated: true };
         } else {
@@ -283,7 +283,7 @@ async function authenticate() {
         
         if (password === "0") break;
 
-        if (checkManagerPassword(password)) {
+        if (await checkManagerPassword(password)) {
           console.log("\n✅ Bienvenue Gestionnaire !\n");
           return { role: "manager", id: null, authenticated: true };
         } else {

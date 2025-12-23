@@ -1,19 +1,7 @@
 # IDENTIFIANTS ET MOTS DE PASSE ENSEIGNANTS.
 
 ID:prof1@utt.fr
-mdp:password123
+mdp:$2b$10$RsbtQ9ExK2BnXJ4vftMIFuPanGJyNfzqz.SzJeS.FRVAVandhI6QG
 
-ID:prof2@utt.fr
-mdp:secure456
-
-ID:test3@gmail.com
-mdp:test3*!
-
-ID:test4@gmail.com
-mdp:abc
-
-ID:test@gmail.com
-mdp:1234
-
-ID:hugo.benoit@utt.fr
-mdp:password123
+ID:hugo@utt.fr
+mdp:$2b$10$5ImXU/wt60eBJnfVStUziOqKyaWBj/8zDQW/97dqxIYAAfdPlKNt2

@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { AUTH_DIR } from "../config/config.js";
 
+import bcrypt from 'bcrypt';
+
 const TEACHERS_FILE = path.join(AUTH_DIR, "teachers.txt");
 const MANAGER_FILE = path.join(AUTH_DIR, "manager.txt");
 
@@ -58,7 +60,7 @@ export function checkTeacherId(id) {
 
 //Vérifie le mot de passe d'un enseignant
 
-export function checkTeacherPassword(id, password) {
+export async function checkTeacherPassword(id, password) {
   const teacherInfo = checkTeacherId(id);
   
   if (!teacherInfo) {
@@ -76,12 +78,12 @@ export function checkTeacherPassword(id, password) {
   }
 
   const storedPassword = passwordLine.substring(4).trim();
-  return storedPassword === password;
+  return await bcrypt.compare(password, storedPassword);
 }
 
 //Vérifie le mot de passe gestionnaire
 
-export function checkManagerPassword(password) {
+export async function checkManagerPassword(password) {
   if (!fs.existsSync(MANAGER_FILE)) {
     return false;
   }
@@ -93,7 +95,7 @@ export function checkManagerPassword(password) {
   }
 
   const storedPassword = content.substring(4).trim();
-  return storedPassword === password;
+  return await bcrypt.compare(password, storedPassword);
 }
 
 //Crée un nouveau compte enseignant 
@@ -105,7 +107,11 @@ export function createTeacherAccount(id, password) {
   }
 
   // Ajouter le nouveau compte
-  const newAccount = `\nID:${id}\nmdp:${password}\n`;
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
+
+  const newAccount = `\nID:${id}\nmdp:${hash}\n`;
+
   fs.appendFileSync(TEACHERS_FILE, newAccount, "utf8");
   
   return true;
