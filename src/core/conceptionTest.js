@@ -48,6 +48,25 @@ export function addQuestion(testCreated, index, questions) {
   return true;
 }
 
+export function deleteQuestion(testCreated, index, questions) {
+
+  let found = false;
+
+  testCreated.questions.forEach((q, i) => {
+    if (q.title === questions[index-1].title) {
+      testCreated.deleteQuestion(i);
+      found = true;
+    }
+  });
+
+  if (found === false) {
+    console.log("❌ Question non trouvée à cet index.");
+    return false;
+  }
+
+  return true;
+}
+
 export function chooseQuestion(questions, index) {
   let q = [];
   

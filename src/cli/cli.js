@@ -37,7 +37,7 @@ import {Test} from "../core/Test.js";
 import AfficherProfil from "../output/AfficherProfil.js";
 import {displayQuestion} from "../core/displayQuestion.js"
 import {AfficherQuestions} from "../core/conceptionTest.js"
-import {addQuestion} from "../core/conceptionTest.js"
+import {addQuestion,deleteQuestion} from "../core/conceptionTest.js"
 import {chooseQuestion} from "../core/conceptionTest.js"
 import {valider} from "../core/conceptionTest.js"
 
@@ -547,9 +547,35 @@ Connecté en tant que : ${user.id}
           // Continuer ou terminer
           console.log(`\n📊 État actuel : ${testCreated.questions.length} question(s) dans le test`);
           
-          const continueChoice = await ask('\nAjouter une autre question ? (o/n) : ');
+console.log(`
+1. Ajouter une question
+2. Supprimer une question
+3. Terminer
+`);
+
+          const continueChoice = await ask('Votre choix (1/2/3) : ');
           
-          if (continueChoice.toLowerCase() !== "o") {
+          console.log("\nListe des questions actuelles dans le test :");
+          
+          if (continueChoice === "2") {
+            testCreated.questions.forEach((q, i) => {
+              console.log(`  ${i + 1}. ${q.title}`);
+            });
+            const deleteIndex = await ask("\nIndice de la question à supprimer : ");
+            
+            if (deleteIndex && !isNaN(deleteIndex)) {
+              const di = Number(deleteIndex);
+              if (di >= 1 && di <= testCreated.questions.length) {
+                testCreated.deleteQuestion(di - 1);
+                console.log("✅ Question supprimée.");
+              } else {
+                console.log("❌ Indice hors de portée.");
+              }
+            } else {
+              console.log("❌ Indice invalide.");
+            }
+          }
+          else if (continueChoice === "3") {
             continuate = false;
           }
         }

@@ -10,4 +10,7 @@ export class Test {
     addQuestion(question) {
         this.questions.push(question);
     }
+    deleteQuestion(index) {
+        this.questions.splice(index, 1);
+    }
 }
