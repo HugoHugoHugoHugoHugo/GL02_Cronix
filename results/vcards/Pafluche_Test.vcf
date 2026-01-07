@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:4.0
+FN:Pafluche Test
+N:Test;Pafluche;;;
+EMAIL;TYPE=work:prof1@utt.fr
+TEL;TYPE=cell:60000000
+ADR;TYPE=work:;;12 Rue Marie Curie;;;;
+ORG:Ministère de l'Éducation de Sealand
+REV:20260106T021330Z
+END:VCARD

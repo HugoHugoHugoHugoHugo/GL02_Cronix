@@ -75,6 +75,34 @@ function ask(question) {
   }));
 }
 
+function askHidden(question) {
+  return new Promise(resolve => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    
+    let prompt = question;
+    // Gestion des sauts de ligne au début pour éviter les problèmes d'affichage lors du masquage
+    const match = question.match(/^\n+/);
+    if (match) {
+      process.stdout.write(match[0]);
+      prompt = question.substring(match[0].length);
+    }
+
+    rl.stdoutMuted = true;
+    rl._writeToOutput = function _writeToOutput(stringToWrite) {
+      if (rl.stdoutMuted) rl.output.write("\x1B[2K\x1B[200D" + prompt + "*".repeat(rl.line.length));
+      else rl.output.write(stringToWrite);
+    };
+    rl.question(prompt, (ans) => {
+      rl.close();
+      console.log(""); // Saut de ligne après validation
+      resolve(ans.trim());
+    });
+  });
+}
+
 function resolvePath(input) {
   if (!input) return null;
   
@@ -250,7 +278,7 @@ async function authenticate() {
     // ═══ ENSEIGNANT ═══
     if (choice === "2") {
       while (true) {
-        const id = await ask("\nIdentifiant enseignant (0 pour revenir en arrière) : ");
+        const id = await ask("\nEmail enseignant (0 pour revenir en arrière) : ");
         
         if (id === "0") break;
 
@@ -263,7 +291,7 @@ async function authenticate() {
           continue;
         }
 
-        const password = await ask("Mot de passe : ");
+        const password = await askHidden("Mot de passe : ");
         
         if (await checkTeacherPassword(id, password)) {
           console.log(`\n✅ Bienvenue ${id} !\n`);
@@ -279,7 +307,7 @@ async function authenticate() {
     // ═══ GESTIONNAIRE ═══
     if (choice === "3") {
       while (true) {
-        const password = await ask("\nMot de passe gestionnaire (0 pour revenir en arrière) : ");
+        const password = await askHidden("\nMot de passe gestionnaire (0 pour revenir en arrière) : ");
         
         if (password === "0") break;
 
@@ -422,6 +450,7 @@ Connecté en tant que : ${user.id}
 1. Concevoir un test
 2. Rechercher une question
 3. Simuler un examen
+4. Générer ma vCard
 0. Se déconnecter
 ═══════════════════════════════════════
 `);
@@ -764,6 +793,20 @@ console.log(`
         continue;
       }
 
+      // ------------------------------------------------------------------
+      // ENSEIGNANT - OPTION 4 : GÉNÉRER MA VCARD
+      // ------------------------------------------------------------------
+      if (choix === "4") {
+        console.log("\n=== GÉNÉRATION DE MA VCARD ===\n");
+        if (sp3 && typeof sp3.genererVCard === "function") {
+          await sp3.genererVCard(user.id);
+        } else {
+          console.log("Fonctionnalité non disponible.");
+        }
+        await ask("\nAppuyez sur Entrée pour revenir au menu...");
+        continue;
+      }
+
       console.log("❌ Choix invalide.");
       continue;
     }
@@ -931,8 +974,46 @@ console.log(`
       // ------------------------------------------------------------------
       if (choix === "2") {
         console.log("\n=== GÉNÉRATION vCard ENSEIGNANT ===\n");
-        if (typeof sp3 === "function") {
-          await sp3();
+
+        let teachers = [];
+        try {
+          if (typeof listTeachers === "function") {
+            teachers = await listTeachers();
+          }
+        } catch (e) {}
+
+        // Fallback : lecture manuelle si listTeachers retourne vide ou n'existe pas
+        if (!Array.isArray(teachers) || teachers.length === 0) {
+          try {
+            const authFile = path.join(AUTH_DIR, "teachers.txt");
+            if (fs.existsSync(authFile)) {
+              const content = fs.readFileSync(authFile, "utf-8");
+              const matches = [...content.matchAll(/^ID:\s*(.+)$/gm)];
+              teachers = matches.map(m => m[1].trim());
+            }
+          } catch (e) {}
+        }
+
+        let selectedId = null;
+
+        if (teachers && teachers.length > 0) {
+          console.log("Enseignants disponibles :");
+          teachers.forEach((t, i) => console.log(`  ${i + 1}. ${t}`));
+          console.log("  0. Saisir manuellement");
+
+          const selection = await ask("\nVotre choix : ");
+          if (selection !== "0") {
+            const index = parseInt(selection, 10) - 1;
+            if (!isNaN(index) && index >= 0 && index < teachers.length) {
+              selectedId = teachers[index];
+            } else {
+              console.log("⚠️  Choix invalide. Passage en mode manuel.");
+            }
+          }
+        }
+
+        if (sp3 && typeof sp3.genererVCard === "function") {
+          await sp3.genererVCard(selectedId);
         } else if (sp3 && typeof sp3.executerSP3 === "function") {
           await sp3.executerSP3();
         } else {
@@ -1247,7 +1328,7 @@ console.log(`
             continue;
         }
                     
-        const newPassword = await ask("Mot de passe : ");
+        const newPassword = await askHidden("Mot de passe : ");
                     
         if (createTeacherAccount(newId, newPassword)) {
           console.log(`\n✅ Compte créé avec succès pour ${newId}`);
