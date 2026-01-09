@@ -1190,6 +1190,27 @@ console.log(`
           console.log("  - profils/profil1.json");
           console.log("  - /chemin/absolu/vers/profil.json\n");
           
+          // Option to display available .json profiles in profils/ before asking
+          const showProfils = await ask("Afficher la liste des fichiers .json dans profils/ ? (o/n) : ");
+
+          if (showProfils.toLowerCase() === "o") {
+            try {
+              const profilFiles = fs.existsSync(PROFILS_DIR)
+                ? fs.readdirSync(PROFILS_DIR).filter(f => f.endsWith('.json'))
+                : [];
+
+              if (profilFiles.length === 0) {
+                console.log("\n⚠️  Aucun fichier .json trouvé dans profils/.\n");
+              } else {
+                console.log("\n📂 Fichiers .json dans profils/ :");
+                profilFiles.forEach(f => console.log(`  - ${f}`));
+                console.log("");
+              }
+            } catch (err) {
+              console.log(`⚠️  Impossible de lister profils/: ${err.message}`);
+            }
+          }
+
           const p1 = await ask("Profil cible (.json) (0 pour revenir au menu) : ");
           
           if (p1 === "0") {
