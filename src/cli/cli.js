@@ -803,10 +803,31 @@ console.log(`
         let continueHisto = true;
         
         while (continueHisto) {
-          console.log("💡 Exemples de fichiers :");
-          console.log("  - test1.gift (cherche dans review/)");
-          console.log("  - review/test1.gift\n");
-          
+          // Option to display exact .gift filenames from review/ before asking
+          const showList = await ask("Afficher la liste des fichiers .gift dans review/ ? (o/n) : ");
+
+          if (showList.toLowerCase() === "o") {
+            try {
+              const reviewFiles = fs.existsSync(REVIEW_DIR)
+                ? fs.readdirSync(REVIEW_DIR).filter(f => f.endsWith('.gift'))
+                : [];
+
+              if (reviewFiles.length === 0) {
+                console.log("\n⚠️  Aucun fichier .gift trouvé dans review/.\n");
+              } else {
+                console.log("\n📂 Fichiers .gift dans review/ :");
+                reviewFiles.forEach(f => console.log(`  - ${f}`));
+                console.log("");
+              }
+            } catch (err) {
+              console.log(`⚠️  Impossible de lister review/: ${err.message}`);
+            }
+          } else {
+            console.log("💡 Exemples de fichiers :");
+            console.log("  - test1.gift (cherche dans review/)");
+            console.log("  - review/test1.gift\n");
+          }
+
           const file = await ask("Nom du fichier .gift (0 pour revenir au menu) : ");
           
           if (file === "0") {
@@ -823,11 +844,7 @@ console.log(`
             continue;
           }
           
-          console.log(file.endsWith(".gift"));
-
           const filePath = resolvePath(file);
-
-          console.log('Trigger1');
 
           if (!fs.existsSync(filePath)) {
             console.log(`\n❌ Le fichier n'existe pas : ${filePath}`);
