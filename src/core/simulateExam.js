@@ -4,6 +4,7 @@ import readline from "readline";
 import fs from "fs";
 import path from "path";
 import { parseGiftFile } from "./giftParser.js";
+import { validateGiftFile } from "./giftValidator.js";
 
 function rlPrompt(q) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -71,6 +72,26 @@ function expandMultiGap(q) {
 }
 
 export async function simulateGiftTest(filePath) {
+  // Gestion de l'extension .gift manquante
+  if (!fs.existsSync(filePath) && !filePath.endsWith(".gift")) {
+    if (fs.existsSync(filePath + ".gift")) {
+      filePath += ".gift";
+    }
+  }
+
+  // 1. Validation structurelle avant parsing
+  const validation = validateGiftFile(filePath);
+  if (!validation.isValid) {
+    console.log("\n⚠️  ATTENTION : Des erreurs de structure ont été détectées dans le fichier GIFT :");
+    validation.errors.forEach(err => console.log(`  - ${err}`));
+
+    // Arrêt si le fichier n'existe pas pour éviter le crash dans parseGiftFile
+    if (validation.errors.some(e => e.includes("Fichier introuvable"))) {
+      return null;
+    }
+    console.log("Le test peut comporter des questions manquantes ou mal affichées.\n");
+  }
+
   const questions = parseGiftFile(filePath);
 
   const instructions = questions.filter(q => q.type === "INSTRUCTION");

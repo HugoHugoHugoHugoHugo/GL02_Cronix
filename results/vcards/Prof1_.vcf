@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:4.0
+FN:Prof1 
+N:;Prof1;;;
+EMAIL;TYPE=work:prof1@utt.fr
+TEL;TYPE=cell:
+ADR;TYPE=work:;;;;;;
+ORG:Ministère de l'Éducation de Sealand
+REV:20260106T024809Z
+END:VCARD
